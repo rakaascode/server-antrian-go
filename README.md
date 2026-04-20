@@ -7,7 +7,7 @@
 [![Docker](https://img.shields.io/badge/Container-Docker-2496ED.svg)](https://www.docker.com)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-> Backend API production-ready untuk sistem antrian bengkel dengan autentikasi Google & Admin, dibangun menggunakan Golang dengan arsitektur clean.
+> Backend API production-ready untuk sistem antrian bengkel dengan autentikasi Google & Admin, dibangun menggunakan Golang dengan clear arsitektur.
 
 ---
 
