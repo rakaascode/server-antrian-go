@@ -1,21 +1,21 @@
 services:
-app:
-  build: .
-  container_name: backend_ta_lautan_teduh
-  restart: always
-  expose:
-    - "8080"
-  environment:
-    DB_HOST: db
-    DB_PORT: 5432
-    DB_USER: admin
-    DB_PASS: ta-lautan
-    DB_NAME: ta_lautan_db
-  networks:
-    - appnet
-  depends_on:
-    - db
-    
+  app:
+    build: .
+    container_name: backend_ta_lautan_teduh
+    restart: always
+    expose:
+      - "8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASS: ta-lautan
+      DB_NAME: ta_lautan_db
+    depends_on:
+      - db
+    networks:
+      - appnet
+
   db:
     image: postgres:15
     container_name: database_ta_lautan_teduh
