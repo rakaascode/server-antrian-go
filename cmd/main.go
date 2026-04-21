@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/rakaascode/server-antrian-go.git/config"
 	"github.com/rakaascode/server-antrian-go.git/handler"
 	"github.com/rakaascode/server-antrian-go.git/models"
@@ -12,6 +14,8 @@ import (
 )
 
 func main(){
+
+	godotenv.Load()
 
 	db, err := config.ConnectDB()
 	if err != nil {
