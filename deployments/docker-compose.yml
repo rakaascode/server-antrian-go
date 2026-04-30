@@ -16,6 +16,8 @@ services:
       DB_NAME: ta_lautan_db
       # JWT & Auth
       JWT_SECRET: ${JWT_SECRET}
+      # Google OAuth (Client ID dari Google Cloud Console — Android)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       # Fonnte (WhatsApp API)
       FONNTE_TOKEN: ${FONNTE_TOKEN}
     depends_on:
