@@ -1,9 +1,9 @@
 module github.com/rakaascode/server-antrian-go.git
 
-go 1.25.0
+go 1.24
 
 require (
-	github.com/gin-gonic/gin v1.12.0
+	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.48.0
