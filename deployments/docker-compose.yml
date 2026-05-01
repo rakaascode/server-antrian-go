@@ -5,8 +5,8 @@ services:
       dockerfile: deployments/Dockerfile
     container_name: backend_ta_lautan_teduh
     restart: always
-    expose:
-      - "8080"
+    ports:
+      - "8080:8080"
     env_file:
       - ../.env
     environment:
