@@ -2,12 +2,18 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency files dulu untuk cache layer
+# Izinkan Go mendownload toolchain yang lebih baru jika modul membutuhkannya
+ENV GOTOOLCHAIN=auto
+
+# Copy dependency files dulu
 COPY go.mod go.sum ./
-RUN go mod download
 
 # Copy semua source code
 COPY . .
+
+# Sinkronisasi dan download dependency
+RUN go mod tidy
+
 
 # Build binary
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/app
