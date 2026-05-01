@@ -6,7 +6,7 @@ services:
     container_name: backend_ta_lautan_teduh
     restart: always
     expose:
-      - "8080:8080"
+      - "8080"
     env_file:
       - ../.env
     environment:
@@ -53,7 +53,7 @@ services:
     container_name: nginx_ta_lautan
     restart: always
     ports:
-      - "8080:8080"
+      - "80:80"
       - "443:443"
     volumes:
       - ../nginx.conf:/etc/nginx/conf.d/default.conf
