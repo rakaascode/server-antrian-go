@@ -7,6 +7,7 @@ services:
     restart: always
     expose:
       - "8080"
+      - "443:443"
     env_file:
       - ../.env
     environment:
@@ -43,7 +44,7 @@ services:
     networks:
       - appnet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d ta_lautan_db"]
+      test: [ "CMD-SHELL", "pg_isready -U admin -d ta_lautan_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
