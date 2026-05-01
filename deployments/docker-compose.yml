@@ -56,8 +56,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ../nginx.conf:/etc/nginx/conf.d/default.conf
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ../nginx-http.conf:/etc/nginx/conf.d/default.conf
+      # Uncomment baris di bawah setelah sertifikat SSL sudah digenerate via Certbot:
+      # - ../nginx.conf:/etc/nginx/conf.d/default.conf
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - app
     networks:
