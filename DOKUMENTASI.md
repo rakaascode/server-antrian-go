@@ -71,7 +71,8 @@ Authorization: Bearer <token>
 | GET | `/broadcast` | ✅ User | Inbox notifikasi (promo + antrian cabang saya) |
 | GET | `/broadcast/:id` | ✅ User | Detail lengkap satu notifikasi |
 | GET | `/users` | ✅ Admin | List semua user |
-| POST | `/users` | ✅ Admin | Buat user baru |
+| GET | `/users/:id` | ✅ Admin | Detail satu user |
+| POST | `/users` | ✅ Admin | Buat user/admin baru |
 | PUT | `/users/:id` | ✅ Admin | Update user |
 | DELETE | `/users/:id` | ✅ Admin | Hapus user |
 
@@ -520,6 +521,95 @@ Lihat **data lengkap** semua antrian di cabang admin yang login (termasuk No HP,
 curl "http://localhost:8080/api/cabang/1/antrian/detail?status=menunggu" \
   -H "Authorization: Bearer <token_admin>"
 ```
+
+---
+
+### USER MANAGEMENT
+
+---
+
+#### `GET /users` — Admin
+Ambil daftar semua user yang terdaftar di sistem.
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/users \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "data": [
+    { "id": 1, "name": "Admin Antrian", "username": "admin_antrian", "role": "admin", "cabang_id": null },
+    { "id": 2, "name": "Budi Google", "email": "budi@gmail.com", "role": "user", "cabang_id": null }
+  ]
+}
+```
+
+---
+
+#### `POST /users` — Admin
+Buat user atau admin baru. Password akan **otomatis di-hash (bcrypt)** oleh server sebelum disimpan.
+
+**📥 Request Body:**
+```json
+{
+  "name": "Admin Kedaton",
+  "username": "admin_kedaton",
+  "password": "Admin@Kedaton123",
+  "role": "admin",
+  "cabang_id": 1
+}
+```
+
+| Field | Tipe | Required | Keterangan |
+|---|---|---|---|
+| `name` | string | ✅ | Nama lengkap |
+| `username` | string | ⚠️ | Wajib jika `role: "admin"` — digunakan untuk login |
+| `email` | string | ⚠️ | Wajib jika `role: "user"` — untuk Google login |
+| `password` | string | ✅ | Min. 6 karakter. Disimpan sebagai bcrypt hash |
+| `role` | string | ✅ | `"user"` atau `"admin"` |
+| `cabang_id` | int | ⚠️ | Wajib jika `role: "admin"` — ID cabang yang dikelola |
+
+**📤 Response `201`:**
+```json
+{
+  "id": 5,
+  "name": "Admin Kedaton",
+  "username": "admin_kedaton",
+  "role": "admin",
+  "cabang_id": 1,
+  "created_at": "2026-05-01T13:53:57Z"
+}
+```
+
+**🧪 cURL:**
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_admin>" \
+  -d '{
+    "name": "Admin Kedaton",
+    "username": "admin_kedaton",
+    "password": "Admin@Kedaton123",
+    "role": "admin",
+    "cabang_id": 1
+  }'
+```
+
+> ⚠️ Endpoint ini membutuhkan token admin yang sudah login. Untuk membuat admin pertama, gunakan SQL Seeder (lihat Seksi 12).
+
+---
+
+#### `PUT /users/:id` — Admin
+Update data user. Jika field `password` diisi, password lama akan diganti (otomatis di-hash ulang).
+
+---
+
+#### `DELETE /users/:id` — Admin
+Hapus user dari sistem.
 
 ---
 
@@ -996,6 +1086,80 @@ nginx_ta_lautan              running
 | Nginx 502 Bad Gateway | App belum siap: `docker compose logs app` |
 | SSL Certificate error | Jalankan certbot dan pastikan path `/etc/letsencrypt` benar |
 | Port 80/443 sudah dipakai | Stop service nginx lain: `sudo systemctl stop nginx` |
+
+---
+
+## 12. 🔐 Pembuatan Admin Pertama (Seeding)
+
+Endpoint `POST /api/users` membutuhkan token admin. Untuk membuat admin pertama saat awal deployment, gunakan SQL langsung ke database:
+
+### Cara: SQL via Docker + pgcrypto
+
+```bash
+# Masuk ke container database dan jalankan SQL berikut:
+docker exec -it database_ta_lautan_teduh psql -U admin -d ta_lautan_db -c "
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+INSERT INTO users (name, username, password, role, created_at, updated_at)
+VALUES (
+  'Admin Antrian',
+  'admin_antrian',
+  crypt('Admin@Antrian123', gen_salt('bf')),
+  'admin',
+  NOW(),
+  NOW()
+)
+ON CONFLICT (username) DO UPDATE SET
+  password = crypt('Admin@Antrian123', gen_salt('bf')),
+  role = 'admin';
+"
+```
+
+> `crypt(..., gen_salt('bf'))` menghasilkan hash bcrypt yang kompatibel dengan library Go (`golang.org/x/crypto/bcrypt`). Login akan berfungsi normal.
+
+**Verifikasi setelah seeding:**
+```bash
+curl -X POST http://localhost:8080/api/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin_antrian","password":"Admin@Antrian123"}'
+```
+
+Response berhasil:
+```json
+{
+  "success": true,
+  "message": "Login admin berhasil",
+  "data": {
+    "token": "eyJhbGci...",
+    "user": { "id": 1, "name": "Admin Antrian", "username": "admin_antrian", "role": "admin" }
+  }
+}
+```
+
+**Setelah punya token**, buat admin untuk cabang lain via API:
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_dari_login>" \
+  -d '{
+    "name": "Admin Kedaton",
+    "username": "admin_kedaton",
+    "password": "Admin@Kedaton123",
+    "role": "admin",
+    "cabang_id": 1
+  }'
+```
+
+### Daftar Admin per Cabang (Contoh)
+
+| Cabang | Username | Password Default |
+|---|---|---|
+| Kedaton | `admin_kedaton` | `Admin@Kedaton123` |
+| Pahoman | `admin_pahoman` | `Admin@Pahoman123` |
+| Tirtayasa | `admin_tirtayasa` | `Admin@Tirtayasa123` |
+| Pramuka | `admin_pramuka` | `Admin@Pramuka123` |
+| Karang Anyar | `admin_karanganyar` | `Admin@KarangAnyar123` |
+
+> ⚠️ **Ganti password default** segera setelah pertama kali login!
 
 ---
 
