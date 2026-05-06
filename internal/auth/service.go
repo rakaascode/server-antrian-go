@@ -37,21 +37,36 @@ func (s *authService) GoogleLogin(req GoogleLoginRequest) (AuthResponse, error) 
 		if err != nil {
 			// Buat akun baru otomatis
 			newUser := user.User{
-				Name:     info.Name,
-				Email:    info.Email,
-				GoogleID: info.Sub,
-				Role:     "user",
+				Name:      info.Name,
+				Email:     info.Email,
+				GoogleID:  info.Sub,
+				AvatarURL: info.Picture,
+				Role:      "user",
 			}
 			u, err = s.userRepo.Create(newUser)
 			if err != nil {
 				return AuthResponse{}, errors.New("gagal membuat akun: " + err.Error())
 			}
 		} else {
-			// Update GoogleID jika belum ada
+			// Update GoogleID dan AvatarURL jika belum ada atau berubah
+			updated := false
 			if u.GoogleID == "" {
 				u.GoogleID = info.Sub
+				updated = true
+			}
+			if u.AvatarURL != info.Picture && info.Picture != "" {
+				u.AvatarURL = info.Picture
+				updated = true
+			}
+			if updated {
 				u, _ = s.userRepo.Update(u)
 			}
+		}
+	} else {
+		// User ditemukan by GoogleID — update avatar jika berubah
+		if u.AvatarURL != info.Picture && info.Picture != "" {
+			u.AvatarURL = info.Picture
+			u, _ = s.userRepo.Update(u)
 		}
 	}
 

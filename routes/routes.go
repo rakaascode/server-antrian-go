@@ -43,6 +43,9 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	userProtected := api.Group("/")
 	userProtected.Use(middleware.AuthMiddleware())
 	{
+		// Profil user sendiri (nama, email, avatar, riwayat antrian + cabang)
+		userProtected.GET("/user/profile", h.User.GetProfile)
+
 		// Ambil nomor antrian (wajib login)
 		userProtected.POST("/antrian", h.Antrian.AmbilAntrian)
 		// Detail antrian milik sendiri (owner atau admin)

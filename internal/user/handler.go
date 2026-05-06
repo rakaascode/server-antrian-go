@@ -15,6 +15,18 @@ func NewUserHandler(s UserService) *UserHandler {
 	return &UserHandler{s}
 }
 
+// GetProfile GET /api/user/profile  (wajib login — user Android)
+// Mengembalikan data profil user dari JWT + riwayat antrian dengan info cabang
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+	profile, err := h.service.GetProfile(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "User tidak ditemukan"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": profile})
+}
+
 func (h *UserHandler) GetAll(c *gin.Context) {
 	users, err := h.service.GetAll()
 	if err != nil {

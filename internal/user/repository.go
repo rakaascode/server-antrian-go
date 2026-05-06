@@ -1,6 +1,9 @@
 package user
 
-import "gorm.io/gorm"
+import (
+	"github.com/rakaascode/server-antrian-go.git/internal/cabang"
+	"gorm.io/gorm"
+)
 
 type UserRepository interface {
 	FindAll() ([]User, error)
@@ -8,6 +11,7 @@ type UserRepository interface {
 	FindByEmail(email string) (User, error)
 	FindByUsername(username string) (User, error)
 	FindByGoogleID(googleID string) (User, error)
+	FindAntrianByUserID(userID uint) ([]AntrianWithCabang, error)
 	Create(user User) (User, error)
 	Update(user User) (User, error)
 	Delete(id uint) error
@@ -63,4 +67,69 @@ func (r *userRepository) Update(user User) (User, error) {
 
 func (r *userRepository) Delete(id uint) error {
 	return r.db.Delete(&User{}, id).Error
+}
+
+// FindAntrianByUserID mengambil riwayat antrian user beserta info cabang
+func (r *userRepository) FindAntrianByUserID(userID uint) ([]AntrianWithCabang, error) {
+	type rawRow struct {
+		ID                uint   `gorm:"column:id"`
+		NomorAntrian      int    `gorm:"column:nomor_antrian"`
+		Status            string `gorm:"column:status"`
+		TanggalKedatangan interface{} `gorm:"column:tanggal_kedatangan"`
+		EstimasiJam       string `gorm:"column:estimasi_jam"`
+		MerkMotor         string `gorm:"column:merk_motor"`
+		TipeMotor         string `gorm:"column:tipe_motor"`
+		CreatedAt         interface{} `gorm:"column:created_at"`
+		// Cabang
+		CabangID    uint   `gorm:"column:cabang_id"`
+		CabangNama  string `gorm:"column:cabang_nama"`
+		CabangAlamat string `gorm:"column:cabang_alamat"`
+		CabangKota  string `gorm:"column:cabang_kota"`
+		CabangNoTelp string `gorm:"column:cabang_no_telp"`
+	}
+
+	var rows []rawRow
+	err := r.db.Raw(`
+		SELECT
+			a.id, a.nomor_antrian, a.status,
+			a.tanggal_kedatangan, a.estimasi_jam,
+			a.merk_motor, a.tipe_motor, a.created_at,
+			c.id    AS cabang_id,
+			c.nama  AS cabang_nama,
+			c.alamat AS cabang_alamat,
+			c.kota  AS cabang_kota,
+			c.no_telp AS cabang_no_telp
+		FROM antrians a
+		LEFT JOIN cabangs c ON c.id = a.cabang_id
+		WHERE a.user_id = ?
+		ORDER BY a.created_at DESC
+	`, userID).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]AntrianWithCabang, 0, len(rows))
+	for _, row := range rows {
+		item := AntrianWithCabang{
+			ID:                row.ID,
+			NomorAntrian:      row.NomorAntrian,
+			Status:            row.Status,
+			TanggalKedatangan: row.TanggalKedatangan,
+			EstimasiJam:       row.EstimasiJam,
+			MerkMotor:         row.MerkMotor,
+			TipeMotor:         row.TipeMotor,
+			CreatedAt:         row.CreatedAt,
+		}
+		if row.CabangID != 0 {
+			item.Cabang = &cabang.Cabang{
+				ID:     row.CabangID,
+				Nama:   row.CabangNama,
+				Alamat: row.CabangAlamat,
+				Kota:   row.CabangKota,
+				NoTelp: row.CabangNoTelp,
+			}
+		}
+		result = append(result, item)
+	}
+	return result, nil
 }
