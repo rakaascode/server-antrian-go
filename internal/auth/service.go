@@ -90,7 +90,11 @@ func (s *authService) AdminLogin(req AdminLoginRequest) (AuthResponse, error) {
 	if !utils.CheckPasswordHash(req.Password, u.Password) {
 		return AuthResponse{}, errors.New("username atau password salah")
 	}
-	token, err := GenerateToken(u.ID, "", u.Username, u.Role, u.CabangID)
+	uname := ""
+	if u.Username != nil {
+		uname = *u.Username
+	}
+	token, err := GenerateToken(u.ID, "", uname, u.Role, u.CabangID)
 	if err != nil {
 		return AuthResponse{}, err
 	}

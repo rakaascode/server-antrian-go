@@ -59,7 +59,7 @@ func main() {
 
 		newUser := user.User{
 			Name:     a.Name,
-			Username: a.Username,
+			Username: &a.Username,
 			Password: hashed,
 			Role:     "admin",
 		}
