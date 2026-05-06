@@ -45,6 +45,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	{
 		// Profil user sendiri (nama, email, avatar, riwayat antrian + cabang)
 		userProtected.GET("/user/profile", h.User.GetProfile)
+		userProtected.GET("/users/profile", h.User.GetProfile) // alias plural
 
 		// Ambil nomor antrian (wajib login)
 		userProtected.POST("/antrian", h.Antrian.AmbilAntrian)
