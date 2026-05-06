@@ -83,7 +83,7 @@ type UserProfileResponse struct {
 	ID        uint                `json:"id"`
 	Name      string              `json:"name"`
 	Email     string              `json:"email,omitempty"`
-	AvatarURL string              `json:"avatar_url,omitempty"`
+	AvatarURL string              `json:"avatar_url"`
 	Role      string              `json:"role"`
 	CreatedAt interface{}         `json:"created_at"`
 	Antrian   []AntrianWithCabang `json:"antrian"`
