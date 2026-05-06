@@ -9,6 +9,8 @@ API untuk sistem manajemen antrian bengkel motor **Lautan Teduh** yang mendukung
 **Fitur utama:**
 - Manajemen antrian per cabang secara real-time
 - Autentikasi multi-peran: User Android (Google), Admin Cabang
+- **Profil user otomatis** dari Google (nama, email, foto avatar) — tersimpan di database
+- **Riwayat antrian user** beserta info cabang (nama, alamat, kota) yang bisa diakses via JWT
 - Notifikasi pengingat otomatis via WhatsApp (Fonnte)
 - In-app broadcast: promo & pengumuman per cabang di aplikasi Android
 - CRM pengiriman pesan WA manual atau dari data antrian
@@ -64,6 +66,7 @@ Authorization: Bearer <token>
 | POST | `/antrian/call-next` | ✅ Admin | Panggil antrian berikutnya |
 | PUT | `/antrian/:id/selesai` | ✅ Admin | Tandai antrian selesai |
 | DELETE | `/antrian/:id` | ✅ Admin | Hapus/batalkan antrian |
+| **GET** | **`/user/profile`** | ✅ User | **Profil user (nama, email, avatar) + riwayat antrian & cabang** |
 | POST | `/crm/send` | ✅ Admin | Kirim WA manual ke nomor tertentu |
 | POST | `/crm/reminders` | ✅ Admin | Kirim pengingat WA dari data antrian |
 | POST | `/broadcast` | ✅ Admin | Kirim broadcast in-app (promo / per cabang) |
@@ -101,7 +104,8 @@ Login user Android menggunakan Google ID Token.
 |---|---|---|---|
 | `id_token` | string | ✅ | ID Token dari Google Sign-In SDK Android |
 
-> Jika akun belum ada, sistem **otomatis membuat akun baru** dari data Google.
+> Jika akun belum ada, sistem **otomatis membuat akun baru** dari data Google (nama, email, foto profil).
+> Jika akun sudah ada dan foto profil Google berubah, `avatar_url` di database **otomatis diperbarui** setiap login.
 
 **📤 Response `200`:**
 ```json
@@ -110,10 +114,18 @@ Login user Android menggunakan Google ID Token.
   "message": "Login Google berhasil",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIs...",
-    "user": { "id": 2, "name": "Budi Google", "email": "budi@gmail.com", "role": "user" }
+    "user": {
+      "id": 2,
+      "name": "Budi Google",
+      "email": "budi@gmail.com",
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocIx...",
+      "role": "user"
+    }
   }
 }
 ```
+
+> **`avatar_url`** adalah link foto profil Google (CDN Google). Langsung bisa ditampilkan di `<img src="...">` pada UI Android.
 
 ---
 
@@ -397,6 +409,84 @@ Lihat semua antrian yang pernah dibuat oleh user yang sedang login.
 ```bash
 curl http://localhost:8080/api/antrian/me \
   -H "Authorization: Bearer <token_user>"
+```
+
+---
+
+#### `GET /user/profile` — User (wajib login)
+Ambil profil lengkap user yang sedang login berdasarkan JWT. Response mencakup:
+- Data profil: nama, email, foto avatar Google
+- Riwayat seluruh antrian yang pernah diambil user, **lengkap dengan info cabang** (nama, alamat, kota, no telp)
+
+Tidak perlu kirim ID user — server otomatis baca dari JWT token.
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/user/profile \
+  -H "Authorization: Bearer <token_user>"
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 2,
+    "name": "Budi Santoso",
+    "email": "budi@gmail.com",
+    "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocIx...",
+    "role": "user",
+    "created_at": "2024-11-01T08:00:00Z",
+    "antrian": [
+      {
+        "id": 5,
+        "nomor_antrian": 3,
+        "status": "selesai",
+        "tanggal_kedatangan": "2024-11-20T00:00:00Z",
+        "estimasi_jam": "09:00",
+        "merk_motor": "Honda",
+        "tipe_motor": "Vario 150",
+        "created_at": "2024-11-19T08:00:00Z",
+        "cabang": {
+          "id": 1,
+          "nama": "Lautan Teduh Kedaton",
+          "alamat": "Jl. Teuku Umar No.15D, Kedaton",
+          "kota": "Bandar Lampung",
+          "no_telp": "081367846069"
+        }
+      },
+      {
+        "id": 3,
+        "nomor_antrian": 7,
+        "status": "selesai",
+        "tanggal_kedatangan": "2024-10-05T00:00:00Z",
+        "estimasi_jam": "10:30",
+        "merk_motor": "Yamaha",
+        "tipe_motor": "NMAX",
+        "created_at": "2024-10-04T09:00:00Z",
+        "cabang": {
+          "id": 3,
+          "nama": "Lautan Teduh Tirtayasa",
+          "alamat": "Jl. Tirtayasa No.12",
+          "kota": "Bandar Lampung",
+          "no_telp": "081234000000"
+        }
+      }
+    ]
+  }
+}
+```
+
+| Field | Keterangan |
+|---|---|
+| `avatar_url` | Link foto profil Google. Langsung dipakai sebagai `src` di komponen gambar Android |
+| `antrian[]` | Riwayat antrian diurutkan dari **terbaru ke terlama** |
+| `antrian[].cabang` | Info cabang tempat antrian diambil (nama, alamat, kota, no_telp) |
+| `antrian[].status` | `menunggu` / `dipanggil` / `selesai` |
+
+**📤 Response `404`:**
+```json
+{ "success": false, "message": "User tidak ditemukan" }
 ```
 
 ---
@@ -753,10 +843,44 @@ curl -X POST http://localhost:8080/api/crm/reminders \
   "email": "string (nullable)",
   "username": "string (nullable, khusus admin)",
   "google_id": "string (nullable, khusus Google login)",
+  "avatar_url": "string (nullable) — URL foto profil Google",
   "role": "string (user | admin)",
   "cabang_id": "int (nullable, khusus admin)",
   "created_at": "datetime",
   "updated_at": "datetime"
+}
+```
+
+> `avatar_url` diambil dari field `picture` pada response Google tokeninfo API. Diperbarui otomatis setiap kali user login jika foto profil Google berubah.
+
+### UserProfileResponse (GET /user/profile)
+```json
+{
+  "id": "int",
+  "name": "string",
+  "email": "string",
+  "avatar_url": "string — URL foto profil Google",
+  "role": "string",
+  "created_at": "datetime",
+  "antrian": [
+    {
+      "id": "int",
+      "nomor_antrian": "int",
+      "status": "string (menunggu | dipanggil | selesai)",
+      "tanggal_kedatangan": "datetime",
+      "estimasi_jam": "string (HH:MM)",
+      "merk_motor": "string",
+      "tipe_motor": "string",
+      "created_at": "datetime",
+      "cabang": {
+        "id": "int",
+        "nama": "string",
+        "alamat": "string",
+        "kota": "string",
+        "no_telp": "string"
+      }
+    }
+  ]
 }
 ```
 
@@ -974,7 +1098,39 @@ Lihat semua broadcast yang pernah dikirim (semua tipe, semua cabang).
 
 ---
 
-## 11. 🚀 Deployment (VPS + Docker)
+## 11. 🗄️ Migrasi Database
+
+Migrasi dilakukan secara manual menggunakan file SQL di folder `migrations/`.
+
+| File | Keterangan |
+|---|---|
+| `001_init.sql` | Schema awal: tabel `cabangs`, `users`, `antrians`, `customers` + index |
+| `002_add_avatar_url.sql` | Tambah kolom `avatar_url TEXT` ke tabel `users` |
+
+### Cara Menjalankan Migrasi (via Docker)
+
+```bash
+# Migrasi pertama kali (schema awal)
+docker exec -i database_ta_lautan_teduh psql -U admin -d ta_lautan_db \
+  < migrations/001_init.sql
+
+# Migrasi tambah kolom avatar_url (jalankan setelah update terbaru)
+docker exec -i database_ta_lautan_teduh psql -U admin -d ta_lautan_db \
+  < migrations/002_add_avatar_url.sql
+```
+
+> Semua migrasi menggunakan `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS` sehingga **aman dijalankan berulang kali** tanpa error.
+
+### Verifikasi Kolom avatar_url
+```bash
+docker exec -it database_ta_lautan_teduh psql -U admin -d ta_lautan_db \
+  -c "\d users"
+```
+Pastikan ada baris: `avatar_url | text`
+
+---
+
+## 12. 🚀 Deployment (VPS + Docker)
 
 Aplikasi ini siap dijalankan di VPS menggunakan **Docker Compose** dengan stack:
 - **App** — Go binary (Alpine)
@@ -1089,7 +1245,7 @@ nginx_ta_lautan              running
 
 ---
 
-## 12. 🔐 Pembuatan Admin Pertama (Seeding)
+## 13. 🔐 Pembuatan Admin Pertama (Seeding)
 
 Endpoint `POST /api/users` membutuhkan token admin. Untuk membuat admin pertama saat awal deployment, gunakan SQL langsung ke database:
 
