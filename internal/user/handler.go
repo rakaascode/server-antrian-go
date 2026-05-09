@@ -86,3 +86,64 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
+
+// GetKontak GET /api/users/kontak — lihat nomor WA yang tersimpan
+func (h *UserHandler) GetKontak(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+	u, err := h.service.GetByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "User tidak ditemukan"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"user_id": u.ID,
+			"no_wa":   u.NoWA,
+		},
+	})
+}
+
+// SaveKontak POST /api/users/kontak — simpan atau update nomor WA
+func (h *UserHandler) SaveKontak(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+
+	var req KontakRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "no_wa wajib diisi"})
+		return
+	}
+
+	u, err := h.service.SaveKontak(userID, req.NoWA)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Kontak WA berhasil disimpan",
+		"data": gin.H{
+			"user_id": u.ID,
+			"no_wa":   u.NoWA,
+		},
+	})
+}
+
+// DeleteKontak DELETE /api/users/kontak — hapus nomor WA
+func (h *UserHandler) DeleteKontak(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+
+	u, err := h.service.DeleteKontak(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Kontak WA berhasil dihapus",
+		"data": gin.H{
+			"user_id": u.ID,
+			"no_wa":   "",
+		},
+	})
+}

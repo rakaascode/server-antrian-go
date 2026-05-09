@@ -67,6 +67,10 @@ Authorization: Bearer <token>
 | PUT | `/antrian/:id/selesai` | ✅ Admin | Tandai antrian selesai |
 | DELETE | `/antrian/:id` | ✅ Admin | Hapus/batalkan antrian |
 | **GET** | **`/user/profile`** | ✅ User | **Profil user (nama, email, avatar) + riwayat antrian & cabang** |
+| **GET** | **`/users/kontak`** | ✅ User | **Lihat nomor WA yang tersimpan** |
+| **POST** | **`/users/kontak`** | ✅ User | **Simpan nomor WA user** |
+| **PUT** | **`/users/kontak`** | ✅ User | **Update nomor WA user** |
+| **DELETE** | **`/users/kontak`** | ✅ User | **Hapus nomor WA user** |
 | POST | `/crm/send` | ✅ Admin | Kirim WA manual ke nomor tertentu |
 | POST | `/crm/reminders` | ✅ Admin | Kirim pengingat WA dari data antrian |
 | POST | `/broadcast` | ✅ Admin | Kirim broadcast in-app (promo / per cabang) |
@@ -700,6 +704,111 @@ Update data user. Jika field `password` diisi, password lama akan diganti (otoma
 
 #### `DELETE /users/:id` — Admin
 Hapus user dari sistem.
+
+---
+
+### KONTAK WA USER
+
+---
+
+#### `GET /users/kontak` — User (wajib login)
+Ambil nomor WhatsApp yang tersimpan untuk user yang sedang login.
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/users/kontak \
+  -H "Authorization: Bearer <token_user>"
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": 2,
+    "no_wa": "08123456789"
+  }
+}
+```
+
+> Jika nomor belum pernah disimpan, `no_wa` akan bernilai string kosong `""`.
+
+---
+
+#### `POST /users/kontak` — User (wajib login)
+Simpan atau update nomor WhatsApp user yang sedang login. Bisa juga menggunakan `PUT /users/kontak`.
+
+**📥 Request Body:**
+```json
+{
+  "no_wa": "08123456789"
+}
+```
+
+| Field | Tipe | Required | Keterangan |
+|---|---|---|---|
+| `no_wa` | string | ✅ | Nomor WA user (format bebas, misal: `08xx`, `62xx`) |
+
+**🧪 cURL:**
+```bash
+curl -X POST http://localhost:8080/api/users/kontak \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_user>" \
+  -d '{"no_wa": "08123456789"}'
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Kontak WA berhasil disimpan",
+  "data": {
+    "user_id": 2,
+    "no_wa": "08123456789"
+  }
+}
+```
+
+**📤 Response `400` (no_wa kosong):**
+```json
+{ "success": false, "message": "no_wa wajib diisi" }
+```
+
+---
+
+#### `PUT /users/kontak` — User (wajib login)
+Alias dari `POST /users/kontak`. Fungsi identik — simpan atau perbarui nomor WA.
+
+**🧪 cURL:**
+```bash
+curl -X PUT http://localhost:8080/api/users/kontak \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_user>" \
+  -d '{"no_wa": "08199999999"}'
+```
+
+---
+
+#### `DELETE /users/kontak` — User (wajib login)
+Hapus (kosongkan) nomor WhatsApp user.
+
+**🧪 cURL:**
+```bash
+curl -X DELETE http://localhost:8080/api/users/kontak \
+  -H "Authorization: Bearer <token_user>"
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Kontak WA berhasil dihapus",
+  "data": {
+    "user_id": 2,
+    "no_wa": ""
+  }
+}
+```
 
 ---
 

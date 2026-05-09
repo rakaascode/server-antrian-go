@@ -15,6 +15,8 @@ type UserRepository interface {
 	Create(user User) (User, error)
 	Update(user User) (User, error)
 	Delete(id uint) error
+	SaveKontak(userID uint, noWA string) (User, error)
+	DeleteKontak(userID uint) (User, error)
 }
 
 type userRepository struct {
@@ -67,6 +69,32 @@ func (r *userRepository) Update(user User) (User, error) {
 
 func (r *userRepository) Delete(id uint) error {
 	return r.db.Delete(&User{}, id).Error
+}
+
+// SaveKontak menyimpan atau memperbarui nomor WA user
+func (r *userRepository) SaveKontak(userID uint, noWA string) (User, error) {
+	var u User
+	if err := r.db.First(&u, userID).Error; err != nil {
+		return User{}, err
+	}
+	u.NoWA = noWA
+	if err := r.db.Model(&u).Update("no_wa", noWA).Error; err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
+// DeleteKontak menghapus (mengosongkan) nomor WA user
+func (r *userRepository) DeleteKontak(userID uint) (User, error) {
+	var u User
+	if err := r.db.First(&u, userID).Error; err != nil {
+		return User{}, err
+	}
+	if err := r.db.Model(&u).Update("no_wa", "").Error; err != nil {
+		return User{}, err
+	}
+	u.NoWA = ""
+	return u, nil
 }
 
 // FindAntrianByUserID mengambil riwayat antrian user beserta info cabang

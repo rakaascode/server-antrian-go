@@ -47,6 +47,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		userProtected.GET("/user/profile", h.User.GetProfile)
 		userProtected.GET("/users/profile", h.User.GetProfile) // alias plural
 
+		// Kontak WA user — simpan, lihat, update, hapus
+		userProtected.GET("/users/kontak", h.User.GetKontak)
+		userProtected.POST("/users/kontak", h.User.SaveKontak)
+		userProtected.PUT("/users/kontak", h.User.SaveKontak) // alias update
+		userProtected.DELETE("/users/kontak", h.User.DeleteKontak)
+
 		// Ambil nomor antrian (wajib login)
 		userProtected.POST("/antrian", h.Antrian.AmbilAntrian)
 		// Detail antrian milik sendiri (owner atau admin)

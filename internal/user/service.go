@@ -9,6 +9,8 @@ type UserService interface {
 	Create(user User) (User, error)
 	Update(id uint, user User) (User, error)
 	Delete(id uint) error
+	SaveKontak(userID uint, noWA string) (User, error)
+	DeleteKontak(userID uint) (User, error)
 }
 
 type userService struct {
@@ -63,6 +65,16 @@ func (s *userService) Update(id uint, u User) (User, error) {
 
 func (s *userService) Delete(id uint) error {
 	return s.repo.Delete(id)
+}
+
+// SaveKontak simpan/update nomor WA user
+func (s *userService) SaveKontak(userID uint, noWA string) (User, error) {
+	return s.repo.SaveKontak(userID, noWA)
+}
+
+// DeleteKontak hapus nomor WA user
+func (s *userService) DeleteKontak(userID uint) (User, error) {
+	return s.repo.DeleteKontak(userID)
 }
 
 // AntrianWithCabang data antrian beserta nama cabang

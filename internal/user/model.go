@@ -9,9 +9,15 @@ type User struct {
 	Email     string    `json:"email,omitempty" gorm:"uniqueIndex"`
 	GoogleID  string    `json:"google_id,omitempty" gorm:"uniqueIndex"` // untuk user Android
 	AvatarURL string    `json:"avatar_url"`                             // foto profil dari Google
+	NoWA      string    `json:"no_wa,omitempty"`                        // nomor WhatsApp user
 	Password  string    `json:"-"`
 	Role      string    `json:"role" gorm:"default:'user'"` // user | admin
 	CabangID  *uint     `json:"cabang_id,omitempty"`        // hanya admin yang punya
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// KontakRequest payload untuk simpan/update nomor WA
+type KontakRequest struct {
+	NoWA string `json:"no_wa" binding:"required"`
 }
