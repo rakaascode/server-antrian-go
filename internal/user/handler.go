@@ -27,6 +27,31 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": profile})
 }
 
+// UpdateProfile PUT /api/user/profile  (wajib login)
+// Memperbarui profil user termasuk avatar dan alamat
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+
+	var req UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	u, err := h.service.UpdateProfile(userID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	u.Password = ""
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Profil berhasil diperbarui",
+		"data":    u,
+	})
+}
+
 func (h *UserHandler) GetAll(c *gin.Context) {
 	users, err := h.service.GetAll()
 	if err != nil {
@@ -145,5 +170,112 @@ func (h *UserHandler) DeleteKontak(c *gin.Context) {
 			"user_id": u.ID,
 			"no_wa":   "",
 		},
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Admin Cabang — hanya bisa diakses super admin
+// ──────────────────────────────────────────────────────────────────────────────
+
+// CreateAdminCabang POST /api/super/admin/cabang — buat akun admin cabang baru
+func (h *UserHandler) CreateAdminCabang(c *gin.Context) {
+	var req CreateAdminCabangRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	u, err := h.service.CreateAdminCabang(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	u.Password = ""
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Admin cabang berhasil dibuat",
+		"data":    u,
+	})
+}
+
+// GetAllAdmins GET /api/super/admins — list semua admin (semua cabang)
+func (h *UserHandler) GetAllAdmins(c *gin.Context) {
+	admins, err := h.service.GetAllAdmins()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	for i := range admins {
+		admins[i].Password = ""
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": admins})
+}
+
+// GetAdminsByCabang GET /api/super/cabang/:id/admins — list admin di cabang tertentu
+func (h *UserHandler) GetAdminsByCabang(c *gin.Context) {
+	cabangID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "ID cabang tidak valid"})
+		return
+	}
+
+	admins, err := h.service.GetAdminsByCabang(uint(cabangID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	for i := range admins {
+		admins[i].Password = ""
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": admins})
+}
+
+// AssignCabang PUT /api/super/admins/:id/assign — tugaskan admin ke cabang
+func (h *UserHandler) AssignCabang(c *gin.Context) {
+	adminID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "ID admin tidak valid"})
+		return
+	}
+
+	var body struct {
+		CabangID uint `json:"cabang_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "cabang_id wajib diisi"})
+		return
+	}
+
+	u, err := h.service.AssignCabang(uint(adminID), body.CabangID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	u.Password = ""
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Admin berhasil ditugaskan ke cabang",
+		"data":    u,
+	})
+}
+
+// UnassignCabang DELETE /api/super/admins/:id/assign — lepas admin dari cabang
+func (h *UserHandler) UnassignCabang(c *gin.Context) {
+	adminID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "ID admin tidak valid"})
+		return
+	}
+
+	u, err := h.service.UnassignCabang(uint(adminID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	u.Password = ""
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Admin berhasil dilepas dari cabang",
+		"data":    u,
 	})
 }

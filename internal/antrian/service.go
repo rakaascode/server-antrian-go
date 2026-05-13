@@ -111,7 +111,7 @@ func (s *antrianService) Selesai(id, cabangID uint) error {
 	if err != nil {
 		return errors.New("antrian tidak ditemukan")
 	}
-	if a.CabangID != cabangID {
+	if cabangID != 0 && a.CabangID != cabangID {
 		return errors.New("antrian bukan milik cabang Anda")
 	}
 
@@ -139,7 +139,7 @@ func (s *antrianService) Delete(id, cabangID uint) error {
 	if err != nil {
 		return errors.New("antrian tidak ditemukan")
 	}
-	if a.CabangID != cabangID {
+	if cabangID != 0 && a.CabangID != cabangID {
 		return errors.New("antrian bukan milik cabang Anda")
 	}
 	return s.repo.Delete(id)

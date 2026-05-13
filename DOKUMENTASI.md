@@ -67,6 +67,7 @@ Authorization: Bearer <token>
 | PUT | `/antrian/:id/selesai` | ✅ Admin | Tandai antrian selesai |
 | DELETE | `/antrian/:id` | ✅ Admin | Hapus/batalkan antrian |
 | **GET** | **`/user/profile`** | ✅ User | **Profil user (nama, email, avatar) + riwayat antrian & cabang** |
+| **PUT** | **`/user/profile`** | ✅ User | **Update profil user (alamat, kota, provinsi, kode pos, promo_aktif, avatar)** |
 | **GET** | **`/users/kontak`** | ✅ User | **Lihat nomor WA yang tersimpan** |
 | **POST** | **`/users/kontak`** | ✅ User | **Simpan nomor WA user** |
 | **PUT** | **`/users/kontak`** | ✅ User | **Update nomor WA user** |
@@ -82,6 +83,11 @@ Authorization: Bearer <token>
 | POST | `/users` | ✅ Admin | Buat user/admin baru |
 | PUT | `/users/:id` | ✅ Admin | Update user |
 | DELETE | `/users/:id` | ✅ Admin | Hapus user |
+| POST | `/super/admin/cabang` | ✅ Super Admin | Buat admin cabang baru |
+| GET | `/super/admins` | ✅ Super Admin | Lihat seluruh admin |
+| GET | `/super/cabang/:id/admins` | ✅ Super Admin | Lihat admin di cabang tertentu |
+| PUT | `/super/admins/:id/assign` | ✅ Super Admin | Assign cabang ke admin |
+| DELETE | `/super/admins/:id/assign` | ✅ Super Admin | Melepas admin dari cabangnya |
 
 ---
 
@@ -491,6 +497,35 @@ curl http://localhost:8080/api/user/profile \
 **📤 Response `404`:**
 ```json
 { "success": false, "message": "User tidak ditemukan" }
+```
+
+---
+
+#### `PUT /user/profile` — User (wajib login)
+Memperbarui informasi profil pengguna seperti nama, alamat, dan persetujuan menerima info promo dari WhatsApp. Alias endpoint ini: `PUT /users/profile`.
+
+**📥 Request Body:**
+```json
+{
+  "name": "Budi Santoso",
+  "avatar_url": "https://url-bucket-avatar.com/budi.jpg",
+  "alamat": "Jl. Mawar Merah No. 12",
+  "kota": "Surabaya",
+  "provinsi": "Jawa Timur",
+  "kode_pos": "60241",
+  "promo_aktif": true
+}
+```
+
+Semua parameter di atas **opsional**. Kirim hanya *field* yang ingin diperbarui, misalnya hanya `"promo_aktif": true`.
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Profil berhasil diperbarui",
+  "data": { ... }
+}
 ```
 
 ---
@@ -952,7 +987,12 @@ curl -X POST http://localhost:8080/api/crm/reminders \
   "email": "string (nullable)",
   "username": "string (nullable, khusus admin)",
   "google_id": "string (nullable, khusus Google login)",
-  "avatar_url": "string (nullable) — URL foto profil Google",
+  "avatar_url": "string (nullable) — URL foto profil",
+  "alamat": "string (nullable)",
+  "kota": "string (nullable)",
+  "provinsi": "string (nullable)",
+  "kode_pos": "string (nullable)",
+  "promo_aktif": "boolean",
   "role": "string (user | admin)",
   "cabang_id": "int (nullable, khusus admin)",
   "created_at": "datetime",
@@ -968,7 +1008,12 @@ curl -X POST http://localhost:8080/api/crm/reminders \
   "id": "int",
   "name": "string",
   "email": "string",
-  "avatar_url": "string — URL foto profil Google",
+  "avatar_url": "string — URL foto profil",
+  "alamat": "string",
+  "kota": "string",
+  "provinsi": "string",
+  "kode_pos": "string",
+  "promo_aktif": "boolean",
   "role": "string",
   "created_at": "datetime",
   "antrian": [

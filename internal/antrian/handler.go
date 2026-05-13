@@ -46,12 +46,22 @@ func (h *AntrianHandler) GetByCabang(c *gin.Context) {
 }
 
 // GetByCabangAdmin GET /api/cabang/:id/antrian/detail  (admin only)
-// Menampilkan data lengkap antrian di cabangnya
+// Menampilkan data lengkap antrian di cabangnya (atau semua cabang jika Super Admin)
 func (h *AntrianHandler) GetByCabangAdmin(c *gin.Context) {
-	cabangID := c.MustGet("cabang_id").(uint)
-	status := c.Query("status")
+	cabangIDURL, _ := strconv.Atoi(c.Param("id"))
 
-	list, err := h.service.GetByCabang(cabangID, status)
+	cabangIDVal, exists := c.Get("cabang_id")
+	if exists {
+		// Admin cabang biasa
+		if uint(cabangIDURL) != cabangIDVal.(uint) {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "Akses ditolak: Admin tidak terikat ke cabang ini"})
+			return
+		}
+	}
+	// Jika tidak exists (tapi lolos RequireRole admin di route), berarti Super Admin
+
+	status := c.Query("status")
+	list, err := h.service.GetByCabang(uint(cabangIDURL), status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
 		return
@@ -75,8 +85,9 @@ func (h *AntrianHandler) GetByID(c *gin.Context) {
 
 	isOwner := a.UserID != nil && *a.UserID == userID.(uint)
 	isAdminSameCabang := role == "admin" && cabangID != nil && a.CabangID == cabangID.(uint)
+	isSuperAdmin := role == "admin" && cabangID == nil
 
-	if !isOwner && !isAdminSameCabang {
+	if !isOwner && !isAdminSameCabang && !isSuperAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "Akses ditolak"})
 		return
 	}
@@ -118,10 +129,23 @@ func (h *AntrianHandler) AmbilAntrian(c *gin.Context) {
 	})
 }
 
-// CallNext POST /api/antrian/call-next  (admin cabang)
+// CallNext POST /api/antrian/call-next  (admin cabang atau super admin)
 func (h *AntrianHandler) CallNext(c *gin.Context) {
-	cabangID := c.MustGet("cabang_id").(uint)
-	a, err := h.service.CallNext(cabangID)
+	var targetCabangID uint
+	cabangIDVal, exists := c.Get("cabang_id")
+	if exists {
+		targetCabangID = cabangIDVal.(uint)
+	} else {
+		// Super Admin: harus mengirim cabang_id via query parameter
+		cID, _ := strconv.Atoi(c.Query("cabang_id"))
+		if cID == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Super Admin harus menyertakan ?cabang_id=..."})
+			return
+		}
+		targetCabangID = uint(cID)
+	}
+
+	a, err := h.service.CallNext(targetCabangID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
 		return
@@ -129,22 +153,38 @@ func (h *AntrianHandler) CallNext(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Antrian dipanggil", "data": a})
 }
 
-// Selesai PUT /api/antrian/:id/selesai  (admin cabang)
+// Selesai PUT /api/antrian/:id/selesai  (admin cabang atau super admin)
 func (h *AntrianHandler) Selesai(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	cabangID := c.MustGet("cabang_id").(uint)
-	if err := h.service.Selesai(uint(id), cabangID); err != nil {
+	
+	var adminCabangID uint
+	cabangIDVal, exists := c.Get("cabang_id")
+	if exists {
+		adminCabangID = cabangIDVal.(uint)
+	} else {
+		adminCabangID = 0 // 0 menandakan Super Admin
+	}
+
+	if err := h.service.Selesai(uint(id), adminCabangID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Antrian selesai"})
 }
 
-// Delete DELETE /api/antrian/:id  (admin cabang)
+// Delete DELETE /api/antrian/:id  (admin cabang atau super admin)
 func (h *AntrianHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	cabangID := c.MustGet("cabang_id").(uint)
-	if err := h.service.Delete(uint(id), cabangID); err != nil {
+	
+	var adminCabangID uint
+	cabangIDVal, exists := c.Get("cabang_id")
+	if exists {
+		adminCabangID = cabangIDVal.(uint)
+	} else {
+		adminCabangID = 0 // 0 menandakan Super Admin
+	}
+
+	if err := h.service.Delete(uint(id), adminCabangID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
 		return
 	}
@@ -180,8 +220,9 @@ func (h *AntrianHandler) GetPosisi(c *gin.Context) {
 
 	isOwner := a.UserID != nil && *a.UserID == userID.(uint)
 	isAdminSameCabang := role == "admin" && cabangID != nil && a.CabangID == cabangID.(uint)
+	isSuperAdmin := role == "admin" && cabangID == nil
 
-	if !isOwner && !isAdminSameCabang {
+	if !isOwner && !isAdminSameCabang && !isSuperAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "Akses ditolak"})
 		return
 	}

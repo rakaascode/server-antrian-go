@@ -36,10 +36,12 @@ func (s *authService) GoogleLogin(req GoogleLoginRequest) (AuthResponse, error) 
 		u, err = s.userRepo.FindByEmail(info.Email)
 		if err != nil {
 			// Buat akun baru otomatis
+			googleID := info.Sub
+			emailStr := info.Email
 			newUser := user.User{
 				Name:      info.Name,
-				Email:     info.Email,
-				GoogleID:  info.Sub,
+				Email:     &emailStr,
+				GoogleID:  &googleID,
 				AvatarURL: info.Picture,
 				Role:      "user",
 			}
@@ -50,8 +52,9 @@ func (s *authService) GoogleLogin(req GoogleLoginRequest) (AuthResponse, error) 
 		} else {
 			// Update GoogleID dan AvatarURL jika belum ada atau berubah
 			updated := false
-			if u.GoogleID == "" {
-				u.GoogleID = info.Sub
+			if u.GoogleID == nil {
+				googleID := info.Sub
+				u.GoogleID = &googleID
 				updated = true
 			}
 			if u.AvatarURL != info.Picture && info.Picture != "" {
@@ -70,7 +73,11 @@ func (s *authService) GoogleLogin(req GoogleLoginRequest) (AuthResponse, error) 
 		}
 	}
 
-	token, err := GenerateToken(u.ID, u.Email, "", u.Role, nil)
+	emailStr := ""
+	if u.Email != nil {
+		emailStr = *u.Email
+	}
+	token, err := GenerateToken(u.ID, emailStr, "", u.Role, nil)
 	if err != nil {
 		return AuthResponse{}, err
 	}

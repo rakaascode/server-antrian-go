@@ -17,6 +17,10 @@ type UserRepository interface {
 	Delete(id uint) error
 	SaveKontak(userID uint, noWA string) (User, error)
 	DeleteKontak(userID uint) (User, error)
+	// Manajemen admin cabang
+	FindAllAdmins() ([]User, error)
+	FindAdminsByCabang(cabangID uint) ([]User, error)
+	UpdateCabangID(userID uint, cabangID *uint) (User, error)
 }
 
 type userRepository struct {
@@ -69,6 +73,33 @@ func (r *userRepository) Update(user User) (User, error) {
 
 func (r *userRepository) Delete(id uint) error {
 	return r.db.Delete(&User{}, id).Error
+}
+
+// FindAllAdmins mengambil semua user dengan role admin
+func (r *userRepository) FindAllAdmins() ([]User, error) {
+	var users []User
+	err := r.db.Where("role = ?", "admin").Find(&users).Error
+	return users, err
+}
+
+// FindAdminsByCabang mengambil admin yang terdaftar di cabang tertentu
+func (r *userRepository) FindAdminsByCabang(cabangID uint) ([]User, error) {
+	var users []User
+	err := r.db.Where("role = ? AND cabang_id = ?", "admin", cabangID).Find(&users).Error
+	return users, err
+}
+
+// UpdateCabangID mengubah cabang_id admin (assign atau unassign)
+func (r *userRepository) UpdateCabangID(userID uint, cabangID *uint) (User, error) {
+	var u User
+	if err := r.db.First(&u, userID).Error; err != nil {
+		return User{}, err
+	}
+	if err := r.db.Model(&u).Update("cabang_id", cabangID).Error; err != nil {
+		return User{}, err
+	}
+	u.CabangID = cabangID
+	return u, nil
 }
 
 // SaveKontak menyimpan atau memperbarui nomor WA user

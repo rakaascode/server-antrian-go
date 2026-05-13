@@ -47,6 +47,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		userProtected.GET("/user/profile", h.User.GetProfile)
 		userProtected.GET("/users/profile", h.User.GetProfile) // alias plural
 
+		// Update profil (alamat, avatar, nama)
+		userProtected.PUT("/user/profile", h.User.UpdateProfile)
+		userProtected.PUT("/users/profile", h.User.UpdateProfile) // alias plural
+
 		// Kontak WA user — simpan, lihat, update, hapus
 		userProtected.GET("/users/kontak", h.User.GetKontak)
 		userProtected.POST("/users/kontak", h.User.SaveKontak)
@@ -78,8 +82,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		adminOnly.DELETE("/antrian/:id", h.Antrian.Delete)
 
 		// CRM / Pengingat WA
-		adminOnly.POST("/crm/send", h.CRM.ManualSend)              // Mode 1: manual (input no WA + pesan)
-		adminOnly.POST("/crm/reminders", h.CRM.ReminderFromAntrian) // Mode 2: dari data antrian
+		adminOnly.POST("/crm/send", h.CRM.ManualSend)               // Mode 1: manual (input no WA + pesan)
+		adminOnly.POST("/crm/reminders", h.CRM.ReminderFromAntrian)  // Mode 2: dari data antrian
 
 		// Broadcast (notifikasi & promo)
 		adminOnly.POST("/broadcast", h.Broadcast.Create)          // kirim broadcast baru
@@ -96,5 +100,25 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		adminOnly.POST("/users", h.User.Create)
 		adminOnly.PUT("/users/:id", h.User.Update)
 		adminOnly.DELETE("/users/:id", h.User.Delete)
+	}
+
+	// ── Protected: Super Admin (global admin tanpa cabang_id) ─────────────────
+	superAdmin := api.Group("/super")
+	superAdmin.Use(middleware.AuthMiddleware(), middleware.RequireSuperAdmin())
+	{
+		// Buat akun admin cabang baru
+		superAdmin.POST("/admin/cabang", h.User.CreateAdminCabang)
+
+		// List semua admin (seluruh cabang)
+		superAdmin.GET("/admins", h.User.GetAllAdmins)
+
+		// List admin di cabang tertentu
+		superAdmin.GET("/cabang/:id/admins", h.User.GetAdminsByCabang)
+
+		// Tugaskan admin ke cabang (atau ganti cabang)
+		superAdmin.PUT("/admins/:id/assign", h.User.AssignCabang)
+
+		// Lepas admin dari cabang (cabang_id = NULL)
+		superAdmin.DELETE("/admins/:id/assign", h.User.UnassignCabang)
 	}
 }
