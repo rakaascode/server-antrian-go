@@ -21,6 +21,49 @@ type Handlers struct {
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
+	// ── Public Pages ──────────────────────────────────────────────────────────
+	r.GET("/privacy-policy", func(c *gin.Context) {
+		c.String(200, `Last updated: 14 May 2026
+
+Teduh Service App respects your privacy and is committed to protecting any personal data that may be collected while using our application.
+
+1. Information We Collect
+Our application may collect the following information:
+- Camera access (if user uses scan or capture features)
+- Location data (coarse and precise location) to provide nearby service features
+- Network information (WiFi and internet status) for app functionality
+
+We do NOT collect sensitive personal data such as passwords, financial information, or identity documents.
+
+2. How We Use Information
+We use the collected information to:
+- Provide core app features (such as service queue and location-based services)
+- Improve app performance and user experience
+- Ensure app functionality over network connections
+
+3. Camera Permission
+The camera is only used when the user explicitly activates features that require image capture or scanning. We do not store or upload camera data without user consent.
+
+4. Location Permission
+Location data is used only to show relevant nearby services. Location is not shared with third parties.
+
+5. Data Sharing
+We do not sell, trade, or share user data with third parties.
+
+6. Data Security
+We take reasonable measures to protect user data from unauthorized access or misuse.
+
+7. Children's Privacy
+This application is not intended for children under 13. We do not knowingly collect data from children.
+
+8. Changes to This Policy
+We may update this Privacy Policy from time to time. Updates will be posted in this page.
+
+9. Contact Us
+If you have questions about this Privacy Policy, contact us at:
+lteduh-antrean@googlegroups.com`)
+	})
+
 	api := r.Group("/api")
 
 	// ── Auth ─────────────────────────────────────────────────────────────────
