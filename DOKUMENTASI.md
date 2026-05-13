@@ -742,6 +742,55 @@ Hapus user dari sistem.
 
 ---
 
+### MANAJEMEN SUPER ADMIN (Khusus Global Admin)
+
+Grup endpoint `/api/super/*` diperuntukkan khusus bagi Super Admin. **Super Admin** adalah *user* dengan peran (`role`) sebagai `"admin"` tetapi **tidak terikat pada cabang mana pun** (`cabang_id` bernilai `null`).
+
+---
+
+#### `POST /super/admin/cabang` — Super Admin
+Membuat akun admin cabang yang baru.
+
+**📥 Request Body:**
+```json
+{
+  "name": "Admin Pahoman",
+  "username": "admin_pahoman",
+  "password": "Password123",
+  "cabang_id": 2
+}
+```
+*Catatan: Parameter `role` akan otomatis di-_set_ menjadi `"admin"` di sisi backend.*
+
+---
+
+#### `GET /super/admins` — Super Admin
+Lihat daftar keseluruhan semua admin (baik Super Admin maupun admin cabang biasa) yang ada di sistem.
+
+---
+
+#### `GET /super/cabang/:id/admins` — Super Admin
+Melihat daftar akun admin yang ditugaskan khusus di ID cabang tersebut.
+
+---
+
+#### `PUT /super/admins/:id/assign` — Super Admin
+Menugaskan (*assign*) ulang sebuah akun admin ke cabang lain.
+
+**📥 Request Body:**
+```json
+{
+  "cabang_id": 3
+}
+```
+
+---
+
+#### `DELETE /super/admins/:id/assign` — Super Admin
+Melepas (*un-assign*) tugas akun admin dari cabangnya. Kolom `cabang_id` pengguna tersebut akan diubah menjadi `null`, yang secara teknis dapat menjadikannya Super Admin.
+
+---
+
 ### KONTAK WA USER
 
 ---
