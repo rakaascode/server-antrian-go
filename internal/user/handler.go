@@ -279,3 +279,37 @@ func (h *UserHandler) UnassignCabang(c *gin.Context) {
 		"data":    u,
 	})
 }
+
+// GetAllUsersKontak GET /api/admin/users/kontak — admin mengambil semua kontak user
+func (h *UserHandler) GetAllUsersKontak(c *gin.Context) {
+	users, err := h.service.GetAllUsersKontak()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	type KontakResponse struct {
+		ID   uint   `json:"id"`
+		Name string `json:"name"`
+		NoWA string `json:"no_wa"`
+	}
+
+	var data []KontakResponse
+	for _, u := range users {
+		data = append(data, KontakResponse{
+			ID:   u.ID,
+			Name: u.Name,
+			NoWA: u.NoWA,
+		})
+	}
+
+	// Pastikan return data slice kosong jika tidak ada user, bukan null
+	if data == nil {
+		data = []KontakResponse{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    data,
+	})
+}

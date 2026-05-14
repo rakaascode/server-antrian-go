@@ -138,6 +138,7 @@ lteduh-antrean@googlegroups.com`)
 		adminOnly.DELETE("/cabang/:id", h.Cabang.Delete)
 
 		// Manajemen User
+		adminOnly.GET("/admin/users/kontak", h.User.GetAllUsersKontak)
 		adminOnly.GET("/users", h.User.GetAll)
 		adminOnly.GET("/users/:id", h.User.GetByID)
 		adminOnly.POST("/users", h.User.Create)

@@ -21,6 +21,7 @@ type UserService interface {
 	GetAdminsByCabang(cabangID uint) ([]User, error)
 	AssignCabang(adminID uint, cabangID uint) (User, error)
 	UnassignCabang(adminID uint) (User, error)
+	GetAllUsersKontak() ([]User, error)
 }
 
 type userService struct {
@@ -208,4 +209,9 @@ type UserProfileResponse struct {
 	Role       string              `json:"role"`
 	CreatedAt interface{}         `json:"created_at"`
 	Antrian   []AntrianWithCabang `json:"antrian"`
+}
+
+// GetAllUsersKontak mengambil semua data kontak user
+func (s *userService) GetAllUsersKontak() ([]User, error) {
+	return s.repo.FindAllUsersKontak()
 }

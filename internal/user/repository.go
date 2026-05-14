@@ -21,6 +21,7 @@ type UserRepository interface {
 	FindAllAdmins() ([]User, error)
 	FindAdminsByCabang(cabangID uint) ([]User, error)
 	UpdateCabangID(userID uint, cabangID *uint) (User, error)
+	FindAllUsersKontak() ([]User, error)
 }
 
 type userRepository struct {
@@ -191,4 +192,11 @@ func (r *userRepository) FindAntrianByUserID(userID uint) ([]AntrianWithCabang, 
 		result = append(result, item)
 	}
 	return result, nil
+}
+
+// FindAllUsersKontak mengambil semua name dan no wa users
+func (r *userRepository) FindAllUsersKontak() ([]User, error) {
+	var users []User
+	err := r.db.Select("id", "name", "no_wa").Where("role = ?", "user").Find(&users).Error
+	return users, err
 }
