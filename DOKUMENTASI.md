@@ -78,6 +78,7 @@ Authorization: Bearer <token>
 | GET | `/broadcast/all` | ✅ Admin | Lihat semua broadcast yang pernah dikirim |
 | GET | `/broadcast` | ✅ User | Inbox notifikasi (promo + antrian cabang saya) |
 | GET | `/broadcast/:id` | ✅ User | Detail lengkap satu notifikasi |
+| **GET** | **`/admin/users/kontak`** | ✅ Admin | **Ambil semua nama dan nomor WA user** |
 | GET | `/users` | ✅ Admin | List semua user |
 | GET | `/users/:id` | ✅ Admin | Detail satu user |
 | POST | `/users` | ✅ Admin | Buat user/admin baru |
@@ -654,6 +655,31 @@ curl "http://localhost:8080/api/cabang/1/antrian/detail?status=menunggu" \
 ---
 
 ### USER MANAGEMENT
+
+---
+
+#### `GET /admin/users/kontak` — Admin
+Ambil daftar nama dan nomor WhatsApp dari seluruh user (role `user`). Digunakan untuk list kontak atau broadcast manual.
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/admin/users/kontak \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 2,
+      "name": "Budi Google",
+      "no_wa": "081234567890"
+    }
+  ]
+}
+```
 
 ---
 
