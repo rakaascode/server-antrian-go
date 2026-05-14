@@ -203,6 +203,21 @@ func (h *AntrianHandler) GetStatusCabang(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
 }
 
+// GetRingkasanSemuaCabang GET /api/cabang/antrian/ringkasan  (public)
+// Ringkasan antrian hari ini: nama cabang, nomor dipanggil, estimasi jam, sisa antrian
+func (h *AntrianHandler) GetRingkasanSemuaCabang(c *gin.Context) {
+	data, err := h.service.GetRingkasanSemuaCabang()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success":      true,
+		"total_cabang": len(data),
+		"data":         data,
+	})
+}
+
 // GetPosisi GET /api/antrian/:id/posisi  (user login)
 // Posisi user di antrian: berapa orang di depan + nomor yang sedang dilayani
 func (h *AntrianHandler) GetPosisi(c *gin.Context) {

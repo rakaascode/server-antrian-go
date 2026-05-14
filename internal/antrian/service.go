@@ -17,6 +17,8 @@ type AntrianService interface {
 	Delete(id, cabangID uint) error
 	GetStatusCabang(cabangID uint) (StatusCabangResponse, error)
 	GetPosisi(antrianID uint) (PosisiResponse, error)
+	// Ringkasan semua cabang (hari ini)
+	GetRingkasanSemuaCabang() ([]RingkasanCabangResponse, error)
 }
 
 type antrianService struct {
@@ -228,4 +230,9 @@ func (s *antrianService) GetPosisi(antrianID uint) (PosisiResponse, error) {
 		NomorDipanggil: nomorDipanggil,
 		Pesan:          pesan,
 	}, nil
+}
+
+// GetRingkasanSemuaCabang ambil ringkasan antrian hari ini untuk semua cabang
+func (s *antrianService) GetRingkasanSemuaCabang() ([]RingkasanCabangResponse, error) {
+	return s.repo.GetRingkasanSemuaCabang()
 }

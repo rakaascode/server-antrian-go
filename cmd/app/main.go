@@ -62,7 +62,7 @@ func main() {
 
 	cabangRepo := cabang.NewCabangRepository(db)
 	cabangSvc := cabang.NewCabangService(cabangRepo)
-	cabangHandler := cabang.NewCabangHandler(cabangSvc)
+	cabangHandler := cabang.NewCabangHandler(cabangSvc, antrianSvc)
 
 	// Setup router
 	r := gin.Default()

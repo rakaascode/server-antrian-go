@@ -77,6 +77,9 @@ lteduh-antrean@googlegroups.com`)
 	api.GET("/cabang", h.Cabang.GetAll)
 	api.GET("/cabang/:id", h.Cabang.GetByID)
 
+	// ── Ringkasan semua cabang — harus sebelum /cabang/:id/antrian ────────────
+	api.GET("/cabang/antrian/ringkasan", h.Antrian.GetRingkasanSemuaCabang) // 🔵 ringkasan semua cabang hari ini
+
 	// ── Antrian per cabang (public — data non-sensitif) ───────────────────────
 	api.GET("/cabang/:id/antrian", h.Antrian.GetByCabang)
 	api.GET("/cabang/:id/antrian/status", h.Antrian.GetStatusCabang) // 🔴 nomor yang sedang dipanggil

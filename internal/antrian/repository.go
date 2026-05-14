@@ -18,6 +18,8 @@ type AntrianRepository interface {
 	// Status antrian realtime
 	FindLatestDipanggil(cabangID uint) (*Antrian, error)
 	CountMenungguSebelum(cabangID uint, nomorAntrian int) (int64, error)
+	// Ringkasan semua cabang (hari ini)
+	GetRingkasanSemuaCabang() ([]RingkasanCabangResponse, error)
 }
 
 type antrianRepository struct {
@@ -94,4 +96,64 @@ func (r *antrianRepository) CountMenungguSebelum(cabangID uint, nomorAntrian int
 		Where("cabang_id = ? AND status = ? AND nomor_antrian < ?", cabangID, StatusMenunggu, nomorAntrian).
 		Count(&count).Error
 	return count, err
+}
+
+// GetRingkasanSemuaCabang mengambil ringkasan antrian hari ini dari semua cabang
+// dalam satu query: nama cabang, koordinat, nomor yang sedang dipanggil, estimasi jam, sisa menunggu
+func (r *antrianRepository) GetRingkasanSemuaCabang() ([]RingkasanCabangResponse, error) {
+	type row struct {
+		CabangID       uint
+		NamaCabang     string
+		Latitude       float64
+		Longitude      float64
+		NomorDipanggil *int
+		EstimasiJam    string
+		SisaAntrian    int64
+	}
+
+	var rows []row
+	err := r.db.Raw(`
+		SELECT
+			c.id                                        AS cabang_id,
+			c.nama                                      AS nama_cabang,
+			c.latitude                                  AS latitude,
+			c.longitude                                 AS longitude,
+			dp.nomor_antrian                            AS nomor_dipanggil,
+			dp.estimasi_jam                             AS estimasi_jam,
+			COALESCE(wt.total, 0)                       AS sisa_antrian
+		FROM cabangs c
+		LEFT JOIN LATERAL (
+			SELECT nomor_antrian, estimasi_jam
+			FROM antrians
+			WHERE cabang_id = c.id
+			  AND status = 'dipanggil'
+			ORDER BY nomor_antrian DESC
+			LIMIT 1
+		) dp ON true
+		LEFT JOIN (
+			SELECT cabang_id, COUNT(*) AS total
+			FROM antrians
+			WHERE status = 'menunggu'
+			  AND DATE(tanggal_kedatangan) = CURRENT_DATE
+			GROUP BY cabang_id
+		) wt ON wt.cabang_id = c.id
+		ORDER BY c.id
+	`).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]RingkasanCabangResponse, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, RingkasanCabangResponse{
+			CabangID:       r.CabangID,
+			NamaCabang:     r.NamaCabang,
+			Latitude:       r.Latitude,
+			Longitude:      r.Longitude,
+			NomorDipanggil: r.NomorDipanggil,
+			EstimasiJam:    r.EstimasiJam,
+			SisaAntrian:    r.SisaAntrian,
+		})
+	}
+	return result, nil
 }

@@ -58,6 +58,7 @@ Authorization: Bearer <token>
 | DELETE | `/cabang/:id` | ✅ Admin | Hapus cabang |
 | GET | `/cabang/:id/antrian` | ❌ | List antrian cabang (publik, tanpa data sensitif) |
 | GET | `/cabang/:id/antrian/status` | ❌ | 🔴 Nomor yang sedang dipanggil + total menunggu |
+| **GET** | **`/cabang/antrian/ringkasan`** | ❌ | 🔵 **Ringkasan antrian hari ini dari semua cabang** |
 | GET | `/cabang/:id/antrian/detail` | ✅ Admin | List antrian cabang (detail lengkap) |
 | POST | `/antrian` | ✅ User | Ambil nomor antrian |
 | GET | `/antrian/me` | ✅ User | Semua antrian milik saya |
@@ -188,7 +189,7 @@ curl -X POST http://localhost:8080/api/auth/admin/login \
 ---
 
 #### `GET /cabang`
-Ambil daftar semua cabang. Tidak memerlukan login.
+Ambil daftar semua cabang. Tidak memerlukan login. Setiap cabang sudah menyertakan **ringkasan antrian hari ini** (`antrian_hari_ini`) sehingga tidak perlu request terpisah ke `/cabang/antrian/ringkasan`.
 
 **📤 Response `200`:**
 ```json
@@ -202,11 +203,43 @@ Ambil daftar semua cabang. Tidak memerlukan login.
       "kota": "Bandar Lampung",
       "no_telp": "081367846069",
       "latitude": -5.3795,
-      "longitude": 105.261
+      "longitude": 105.261,
+      "antrian_hari_ini": {
+        "nomor_dipanggil": 5,
+        "estimasi_jam": "10:30",
+        "sisa_antrian": 12
+      }
+    },
+    {
+      "id": 2,
+      "nama": "Lautan Teduh Pahoman",
+      "alamat": "Jl. Raden Intan No.88",
+      "kota": "Bandar Lampung",
+      "no_telp": "081291234567",
+      "latitude": -5.4012,
+      "longitude": 105.2748,
+      "antrian_hari_ini": {
+        "nomor_dipanggil": null,
+        "estimasi_jam": "",
+        "sisa_antrian": 0
+      }
     }
   ]
 }
 ```
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| `id` | int | ID cabang |
+| `nama` | string | Nama cabang |
+| `alamat` | string | Alamat lengkap cabang |
+| `kota` | string | Kota cabang |
+| `no_telp` | string | Nomor telepon cabang |
+| `latitude` | float | Koordinat lintang (untuk peta) |
+| `longitude` | float | Koordinat bujur (untuk peta) |
+| `antrian_hari_ini.nomor_dipanggil` | int \| null | Nomor yang sedang dipanggil. `null` jika belum ada |
+| `antrian_hari_ini.estimasi_jam` | string | Estimasi jam servis antrian berjalan. `""` jika belum ada |
+| `antrian_hari_ini.sisa_antrian` | int | Jumlah antrian berstatus `menunggu` hari ini |
 
 **🧪 cURL:**
 ```bash
@@ -410,6 +443,67 @@ curl http://localhost:8080/api/cabang/1/antrian/status
   }
 }
 ```
+
+---
+
+#### `GET /cabang/antrian/ringkasan` 🔵 — Public
+Ambil **ringkasan antrian hari ini** dari **semua cabang** dalam satu request. Cocok untuk halaman beranda aplikasi Android yang menampilkan daftar cabang beserta kondisi antriannya saat ini.
+
+> Tidak memerlukan login. Data difilter otomatis berdasarkan **hari ini** (`tanggal_kedatangan = CURRENT_DATE`).
+
+> ⚠️ **Catatan routing:** Endpoint ini harus dipanggil di path `/cabang/antrian/ringkasan`, bukan `/cabang/:id/antrian/ringkasan`. Path ini terdaftar sebelum route `:id` agar tidak bentrok.
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/cabang/antrian/ringkasan
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "total_cabang": 3,
+  "data": [
+    {
+      "cabang_id": 1,
+      "nama_cabang": "Lautan Teduh Kedaton",
+      "latitude": -5.3795,
+      "longitude": 105.261,
+      "nomor_dipanggil": 5,
+      "estimasi_jam": "10:30",
+      "sisa_antrian": 8
+    },
+    {
+      "cabang_id": 2,
+      "nama_cabang": "Lautan Teduh Pahoman",
+      "latitude": -5.4012,
+      "longitude": 105.2748,
+      "nomor_dipanggil": null,
+      "estimasi_jam": "",
+      "sisa_antrian": 3
+    },
+    {
+      "cabang_id": 3,
+      "nama_cabang": "Lautan Teduh Tirtayasa",
+      "latitude": -5.4201,
+      "longitude": 105.2590,
+      "nomor_dipanggil": null,
+      "estimasi_jam": "",
+      "sisa_antrian": 0
+    }
+  ]
+}
+```
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| `cabang_id` | int | ID cabang |
+| `nama_cabang` | string | Nama cabang |
+| `latitude` | float | Koordinat lintang cabang |
+| `longitude` | float | Koordinat bujur cabang |
+| `nomor_dipanggil` | int \| null | Nomor antrian yang sedang dipanggil. `null` jika belum ada |
+| `estimasi_jam` | string | Estimasi jam servis antrian yang sedang berjalan. `""` jika belum ada |
+| `sisa_antrian` | int | Jumlah antrian berstatus `menunggu` hari ini di cabang tersebut |
 
 ---
 

@@ -75,7 +75,18 @@ type StatusCabangResponse struct {
 type PosisiResponse struct {
 	NomorAntrian   int    `json:"nomor_antrian"`
 	Status         string `json:"status"`
-	Posisi         int64  `json:"posisi"`         // berapa orang di depan
+	Posisi         int64  `json:"posisi"`          // berapa orang di depan
 	NomorDipanggil *int   `json:"nomor_dipanggil"` // nomor yang sedang dilayani
 	Pesan          string `json:"pesan"`
+}
+
+// RingkasanCabangResponse ringkasan antrian hari ini per cabang (public)
+type RingkasanCabangResponse struct {
+	CabangID       uint    `json:"cabang_id"`
+	NamaCabang     string  `json:"nama_cabang"`
+	Latitude       float64 `json:"latitude"`
+	Longitude      float64 `json:"longitude"`
+	NomorDipanggil *int    `json:"nomor_dipanggil"` // null jika belum ada yang dipanggil
+	EstimasiJam    string  `json:"estimasi_jam"`    // estimasi jam antrian yang sedang berjalan
+	SisaAntrian    int64   `json:"sisa_antrian"`    // jumlah antrian berstatus "menunggu" hari ini
 }
