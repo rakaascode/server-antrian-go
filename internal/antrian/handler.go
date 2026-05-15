@@ -129,6 +129,19 @@ func (h *AntrianHandler) AmbilAntrian(c *gin.Context) {
 	})
 }
 
+// BatalkanAntrian DELETE /api/antrian/:id/batal  (user login — pemilik antrian)
+// User hanya bisa membatalkan antrian miliknya sendiri yang masih berstatus "menunggu"
+func (h *AntrianHandler) BatalkanAntrian(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	userID := c.MustGet("user_id").(uint)
+
+	if err := h.service.BatalkanAntrian(uint(id), userID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Antrian berhasil dibatalkan"})
+}
+
 // CallNext POST /api/antrian/call-next  (admin cabang atau super admin)
 func (h *AntrianHandler) CallNext(c *gin.Context) {
 	var targetCabangID uint

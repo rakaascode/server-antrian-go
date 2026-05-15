@@ -3,9 +3,10 @@ package antrian
 import "time"
 
 const (
-	StatusMenunggu  = "menunggu"
-	StatusDipanggil = "dipanggil"
-	StatusSelesai   = "selesai"
+	StatusMenunggu   = "menunggu"
+	StatusDipanggil  = "dipanggil"
+	StatusSelesai    = "selesai"
+	StatusDibatalkan = "dibatalkan"
 )
 
 type Antrian struct {

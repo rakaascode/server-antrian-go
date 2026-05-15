@@ -12,6 +12,7 @@ type AntrianService interface {
 	GetByID(id uint) (Antrian, error)
 	GetMyAntrian(userID uint) ([]Antrian, error)
 	AmbilAntrian(req AmbilAntrianRequest, userID *uint) (Antrian, error)
+	BatalkanAntrian(antrianID, userID uint) error
 	CallNext(cabangID uint) (Antrian, error)
 	Selesai(id, cabangID uint) error
 	Delete(id, cabangID uint) error
@@ -76,6 +77,28 @@ func (s *antrianService) AmbilAntrian(req AmbilAntrianRequest, userID *uint) (An
 	}
 	return s.repo.Create(a)
 }
+
+// BatalkanAntrian membatalkan antrian milik user — hanya bisa jika status masih "menunggu"
+func (s *antrianService) BatalkanAntrian(antrianID, userID uint) error {
+	a, err := s.repo.FindByID(antrianID)
+	if err != nil {
+		return errors.New("antrian tidak ditemukan")
+	}
+	if a.UserID == nil || *a.UserID != userID {
+		return errors.New("Anda tidak memiliki akses untuk membatalkan antrian ini")
+	}
+	if a.Status != StatusMenunggu {
+		if a.Status == StatusDipanggil {
+			return errors.New("antrian sudah dipanggil, tidak dapat dibatalkan")
+		}
+		if a.Status == StatusSelesai {
+			return errors.New("antrian sudah selesai, tidak dapat dibatalkan")
+		}
+		return errors.New("antrian tidak dapat dibatalkan")
+	}
+	return s.repo.UpdateStatus(antrianID, StatusDibatalkan)
+}
+
 
 // CallNext panggil antrian berikutnya di cabang ini
 // Jika antrian memiliki reminder aktif, kirim notifikasi WA secara async

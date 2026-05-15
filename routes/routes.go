@@ -105,6 +105,8 @@ lteduh-antrean@googlegroups.com`)
 
 		// Ambil nomor antrian (wajib login)
 		userProtected.POST("/antrian", h.Antrian.AmbilAntrian)
+		// Batalkan antrian milik sendiri (hanya bisa jika status "menunggu")
+		userProtected.DELETE("/antrian/:id/batal", h.Antrian.BatalkanAntrian)
 		// Detail antrian milik sendiri (owner atau admin)
 		userProtected.GET("/antrian/:id", h.Antrian.GetByID)
 		// Posisi di antrian (berapa orang di depan)

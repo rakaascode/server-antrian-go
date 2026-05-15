@@ -61,6 +61,7 @@ Authorization: Bearer <token>
 | **GET** | **`/cabang/antrian/ringkasan`** | ❌ | 🔵 **Ringkasan antrian hari ini dari semua cabang** |
 | GET | `/cabang/:id/antrian/detail` | ✅ Admin | List antrian cabang (detail lengkap) |
 | POST | `/antrian` | ✅ User | Ambil nomor antrian |
+| **DELETE** | **`/antrian/:id/batal`** | ✅ User | **Batalkan antrian milik sendiri (hanya bisa jika status menunggu)** |
 | GET | `/antrian/me` | ✅ User | Semua antrian milik saya |
 | GET | `/antrian/:id` | ✅ User/Admin | Detail antrian (owner / admin cabang) |
 | GET | `/antrian/:id/posisi` | ✅ User | Posisi di antrian & nomor yang sedang dilayani |
@@ -698,6 +699,43 @@ Lihat detail lengkap satu antrian. Hanya bisa diakses oleh:
 ```json
 { "success": false, "message": "Akses ditolak" }
 ```
+
+---
+
+#### `DELETE /antrian/:id/batal` — User (wajib login)
+Batalkan antrian milik sendiri. Hanya bisa dilakukan jika:
+- Antrian adalah milik user yang login (`user_id` cocok)
+- Status antrian masih `menunggu` (belum dipanggil / selesai)
+
+Status antrian akan berubah menjadi `dibatalkan`.
+
+**🧪 cURL:**
+```bash
+curl -X DELETE http://localhost:8080/api/antrian/5/batal \
+  -H "Authorization: Bearer <token_user>"
+```
+
+**📤 Response `200`:**
+```json
+{ "success": true, "message": "Antrian berhasil dibatalkan" }
+```
+
+**📤 Response `400` (antrian bukan milik user):**
+```json
+{ "success": false, "message": "Anda tidak memiliki akses untuk membatalkan antrian ini" }
+```
+
+**📤 Response `400` (antrian sudah dipanggil):**
+```json
+{ "success": false, "message": "antrian sudah dipanggil, tidak dapat dibatalkan" }
+```
+
+| Status | Bisa Dibatalkan? |
+|---|---|
+| `menunggu` | ✅ Ya |
+| `dipanggil` | ❌ Tidak |
+| `selesai` | ❌ Tidak |
+| `dibatalkan` | ❌ Tidak |
 
 ---
 
