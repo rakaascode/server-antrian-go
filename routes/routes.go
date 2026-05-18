@@ -130,7 +130,8 @@ lteduh-antrean@googlegroups.com`)
 		adminOnly.DELETE("/antrian/:id", h.Antrian.Delete)
 
 		// CRM / Pengingat WA
-		adminOnly.POST("/crm/send", h.CRM.ManualSend)               // Mode 1: manual (input no WA + pesan)
+		adminOnly.GET("/crm/antrian", h.CRM.GetAntrianForCrm)        // Picker: list antrian hari ini + antrian_id
+		adminOnly.POST("/crm/send", h.CRM.ManualSend)                // Mode 1: manual (input no WA + pesan)
 		adminOnly.POST("/crm/reminders", h.CRM.ReminderFromAntrian)  // Mode 2: dari data antrian
 
 		// Broadcast (notifikasi & promo)

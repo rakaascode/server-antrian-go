@@ -50,3 +50,20 @@ func (h *CrmHandler) ReminderFromAntrian(c *gin.Context) {
 		"message": "Pengingat berhasil dikirim ke pelanggan",
 	})
 }
+
+// GetAntrianForCrm GET /api/crm/antrian
+// Listing antrian hari ini (menunggu/dipanggil) di cabang admin
+// Admin pakai ini sebagai picker untuk tahu antrian_id sebelum kirim reminder
+func (h *CrmHandler) GetAntrianForCrm(c *gin.Context) {
+	cabangID := c.MustGet("cabang_id").(uint)
+	list, err := h.service.GetAntrianForCrm(cabangID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    list,
+		"total":   len(list),
+	})
+}

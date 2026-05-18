@@ -14,6 +14,9 @@ type CrmService interface {
 
 	// Mode 2: Auto dari Antrian — ambil no WA dari data antrian + kirim pesan
 	ReminderFromAntrian(req ReminderFromAntrianRequest, cabangID uint) error
+
+	// Listing antrian hari ini di cabang admin (untuk picker sebelum kirim reminder)
+	GetAntrianForCrm(cabangID uint) ([]AntrianCrmItem, error)
 }
 
 type crmService struct {
@@ -77,4 +80,31 @@ func (s *crmService) ReminderFromAntrian(req ReminderFromAntrianRequest, cabangI
 		return fmt.Errorf("gagal mengirim WA: %v", err)
 	}
 	return nil
+}
+
+// GetAntrianForCrm mengembalikan list antrian hari ini yang masih aktif (menunggu/dipanggil)
+// di cabang admin — digunakan sebagai picker sebelum admin memilih antrian mana yang mau dikirimi reminder
+func (s *crmService) GetAntrianForCrm(cabangID uint) ([]AntrianCrmItem, error) {
+	list, err := s.antrianRepo.FindTodayActiveByCabang(cabangID)
+	if err != nil {
+		return nil, fmt.Errorf("gagal mengambil data antrian: %v", err)
+	}
+
+	result := make([]AntrianCrmItem, 0, len(list))
+	for _, a := range list {
+		result = append(result, AntrianCrmItem{
+			ID:            a.ID,
+			NomorAntrian:  a.NomorAntrian,
+			Status:        a.Status,
+			NamaPemilik:   a.NamaPemilik,
+			NoHP:          a.NoHP,
+			NoWAReminder:  a.NoWAReminder,
+			ReminderAktif: a.ReminderAktif,
+			MerkMotor:     a.MerkMotor,
+			TipeMotor:     a.TipeMotor,
+			EstimasiJam:   a.EstimasiJam,
+			Tanggal:       a.TanggalKedatangan,
+		})
+	}
+	return result, nil
 }

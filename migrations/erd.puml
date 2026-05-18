@@ -1,0 +1,104 @@
+@startuml ERD_server-antrian-go
+
+!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define PK(x) <u>x</u>
+!define FK(x) <i>x</i>
+
+hide methods
+hide stereotypes
+
+skinparam class {
+    BackgroundColor WhiteSmoke
+    BorderColor #555555
+    ArrowColor #333333
+    FontName Arial
+    HeaderBackgroundColor #4A90D9
+    HeaderFontColor White
+    HeaderFontSize 13
+    FontSize 11
+}
+
+skinparam linetype ortho
+
+' =====================
+' TABLE: cabangs
+' =====================
+entity "cabangs" as cabangs {
+    * PK(id)            : SERIAL
+    --
+    * nama              : VARCHAR(150)
+    alamat              : TEXT
+    kota                : VARCHAR(100)
+    no_telp             : VARCHAR(20)
+    latitude            : DOUBLE PRECISION
+    longitude           : DOUBLE PRECISION
+    created_at          : TIMESTAMPTZ
+    updated_at          : TIMESTAMPTZ
+}
+
+' =====================
+' TABLE: users
+' =====================
+entity "users" as users {
+    * PK(id)            : SERIAL
+    --
+    * name              : VARCHAR(100)
+    username            : VARCHAR(100) <<UNIQUE>>
+    email               : VARCHAR(150) <<UNIQUE>>
+    google_id           : VARCHAR(255) <<UNIQUE>>
+    password            : VARCHAR(255)
+    role                : VARCHAR(20)
+    FK(cabang_id)       : INT
+    avatar_url          : TEXT
+    no_wa               : VARCHAR(20)
+    alamat              : TEXT
+    kota                : VARCHAR(100)
+    provinsi            : VARCHAR(100)
+    kode_pos            : VARCHAR(20)
+    promo_aktif         : BOOLEAN
+    created_at          : TIMESTAMPTZ
+    updated_at          : TIMESTAMPTZ
+}
+
+' =====================
+' TABLE: antrians
+' =====================
+entity "antrians" as antrians {
+    * PK(id)            : SERIAL
+    --
+    * FK(cabang_id)     : INT
+    FK(user_id)         : INT
+    * nomor_antrian     : INT
+    status              : VARCHAR(20)
+    * nama_pemilik      : VARCHAR(150)
+    * merk_motor        : VARCHAR(100)
+    * tipe_motor        : VARCHAR(100)
+    * no_rangka         : VARCHAR(100)
+    * no_mesin          : VARCHAR(100)
+    * tahun_pembuatan   : INT
+    * tanggal_kedatangan: DATE
+    * estimasi_jam      : VARCHAR(10)
+    catatan             : TEXT
+    created_at          : TIMESTAMPTZ
+    updated_at          : TIMESTAMPTZ
+}
+
+' =====================
+' RELATIONSHIPS
+' =====================
+cabangs  ||--o{ users     : "memiliki admin\n(cabang_id)"
+cabangs  ||--o{ antrians  : "memiliki antrian\n(cabang_id)"
+users    ||--o{ antrians  : "mendaftar antrian\n(user_id, nullable)"
+
+note bottom of antrians
+    status values:
+    menunggu | dipanggil
+    selesai  | dibatalkan
+end note
+
+note right of users
+    role values:
+    user | admin | super_admin
+end note
+
+@enduml

@@ -20,6 +20,8 @@ type AntrianRepository interface {
 	CountMenungguSebelum(cabangID uint, nomorAntrian int) (int64, error)
 	// Ringkasan semua cabang (hari ini)
 	GetRingkasanSemuaCabang() ([]RingkasanCabangResponse, error)
+	// Antrian hari ini yang masih aktif (menunggu/dipanggil) — untuk CRM
+	FindTodayActiveByCabang(cabangID uint) ([]Antrian, error)
 }
 
 type antrianRepository struct {
@@ -156,4 +158,16 @@ func (r *antrianRepository) GetRingkasanSemuaCabang() ([]RingkasanCabangResponse
 		})
 	}
 	return result, nil
+}
+
+// FindTodayActiveByCabang ambil antrian hari ini yang berstatus menunggu atau dipanggil
+// diurutkan berdasarkan nomor antrian — dipakai CRM untuk listing sebelum kirim reminder
+func (r *antrianRepository) FindTodayActiveByCabang(cabangID uint) ([]Antrian, error) {
+	var list []Antrian
+	err := r.db.Where(
+		"cabang_id = ? AND status IN ? AND DATE(tanggal_kedatangan) = CURRENT_DATE",
+		cabangID,
+		[]string{StatusMenunggu, StatusDipanggil},
+	).Order("nomor_antrian asc").Find(&list).Error
+	return list, err
 }
