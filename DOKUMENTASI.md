@@ -75,6 +75,7 @@ Authorization: Bearer <token>
 | **PUT** | **`/users/kontak`** | ✅ User | **Update nomor WA user** |
 | **DELETE** | **`/users/kontak`** | ✅ User | **Hapus nomor WA user** |
 | POST | `/crm/send` | ✅ Admin | Kirim WA manual ke nomor tertentu |
+| **GET** | **`/crm/antrian`** | ✅ Admin | **Picker: list antrian hari ini + `antrian_id` (step 1 sebelum kirim reminder)** |
 | POST | `/crm/reminders` | ✅ Admin | Kirim pengingat WA dari data antrian |
 | POST | `/broadcast` | ✅ Admin | Kirim broadcast in-app (promo / per cabang) |
 | GET | `/broadcast/all` | ✅ Admin | Lihat semua broadcast yang pernah dikirim |
@@ -1129,6 +1130,73 @@ curl -X POST http://localhost:8080/api/crm/reminders \
 ```
 
 ---
+
+#### `GET /crm/antrian` — Admin
+Ambil daftar antrian **hari ini** yang masih aktif (`menunggu` / `dipanggil`) di cabang admin yang sedang login. Gunakan endpoint ini sebagai **step 1 (picker)** sebelum memanggil `POST /crm/reminders` — sehingga admin tahu `antrian_id` mana yang ingin dikirimi pengingat.
+
+> `cabang_id` diambil otomatis dari JWT token admin. Admin tidak perlu tahu/input ID cabang secara manual.
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/crm/antrian \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+**📤 Response `200`:**
+```json
+{
+  "success": true,
+  "total": 3,
+  "data": [
+    {
+      "id": 42,
+      "nomor_antrian": 5,
+      "status": "menunggu",
+      "nama_pemilik": "Budi Santoso",
+      "no_hp": "08123456789",
+      "no_wa_reminder": "08123456789",
+      "reminder_aktif": true,
+      "merk_motor": "Honda",
+      "tipe_motor": "Vario 125",
+      "estimasi_jam": "10:00",
+      "tanggal_kedatangan": "2026-05-18T00:00:00Z"
+    },
+    {
+      "id": 43,
+      "nomor_antrian": 6,
+      "status": "menunggu",
+      "nama_pemilik": "Siti Rahayu",
+      "no_hp": "08987654321",
+      "reminder_aktif": false,
+      "merk_motor": "Yamaha",
+      "tipe_motor": "NMAX",
+      "estimasi_jam": "10:30",
+      "tanggal_kedatangan": "2026-05-18T00:00:00Z"
+    }
+  ]
+}
+```
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| `id` | int | **`antrian_id`** yang dipakai di `POST /crm/reminders` |
+| `nomor_antrian` | int | Nomor urut antrian |
+| `status` | string | `menunggu` atau `dipanggil` |
+| `nama_pemilik` | string | Nama pelanggan |
+| `no_hp` | string | No HP utama (sesuai STNK) |
+| `no_wa_reminder` | string | No WA pengingat (bisa beda dari `no_hp`). Kosong jika tidak diisi |
+| `reminder_aktif` | bool | `true` = pelanggan sudah opt-in pengingat WA |
+| `merk_motor` | string | Merek motor |
+| `tipe_motor` | string | Tipe motor |
+| `estimasi_jam` | string | Estimasi jam servis |
+| `tanggal_kedatangan` | datetime | Tanggal antrian |
+
+> **Alur lengkap kirim reminder:**
+> 1. `GET /crm/antrian` → pilih antrian dari list, catat `id`-nya
+> 2. `POST /crm/reminders` → kirim `{ "antrian_id": <id>, "pesan": "..." }`
+
+---
+
 
 ## 5. 📊 Status Code
 
