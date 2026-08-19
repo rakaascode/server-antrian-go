@@ -1,279 +1,188 @@
-# 🚀 Server Antrian Bengkel Lautan Teduh (Go Backend API)
+<div align="center">
 
-[![Go](https://img.shields.io/badge/Language-Go-blue.svg)](https://go.dev)
-[![Gin](https://img.shields.io/badge/Framework-Gin-green.svg)](https://github.com/gin-gonic/gin)
-[![GORM](https://img.shields.io/badge/ORM-GORM-orange.svg)](https://gorm.io)
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue.svg)](https://www.postgresql.org)
-[![Docker](https://img.shields.io/badge/Container-Docker-2496ED.svg)](https://www.docker.com)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+# ⚡ AntrianGO Backend
+### Enterprise-Grade Smart Queue Management & Customer CRM Engine
 
-> Backend API production-ready untuk sistem antrian bengkel dengan autentikasi Google & Admin, dibangun menggunakan Golang dengan clear arsitektur.
+[![Go Version](https://img.shields.io/badge/Go-1.25-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
+[![Gin Framework](https://img.shields.io/badge/Gin-v1.10-008ECF?style=for-the-badge&logo=gin&logoColor=white)](https://gin-gonic.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=for-the-badge)](LICENSE)
 
----
+<p align="center">
+  <b>High-throughput, event-driven REST API engineered in Golang</b><br>
+  Empowering automotive service centers with real-time queuing, intelligent WhatsApp CRM automation, and multi-tenant branch orchestration.
+</p>
 
-## 🎯 Overview
+[Explore API Endpoints](#-api-endpoints-overview) • [System Architecture](#-tech-stack--architecture) • [Quick Start](#-quick-start) • [Security & Hardening](#4--enterprise-security--hardening)
 
-Project ini merupakan backend service untuk sistem antrian bengkel yang menyediakan:
-
-* 🔐 **Authentication System**
-
-  * Login User via Google Token
-  * Login Admin via Username & Password
-* 📦 **REST API CRUD**
-* 🧱 **Clean Architecture (Handler → Service → Repository)**
-* 🐳 **Dockerized Environment**
+</div>
 
 ---
 
-## ✨ Features
+## 🌟 Executive Summary
 
-### 🔐 Authentication
+**AntrianGO** is a high-performance, fault-tolerant queue management and customer relationship backend platform designed specifically for multi-branch automotive networks. Built with **Go** and **Clean Architecture**, it decouples intense synchronous HTTP traffic from asynchronous broadcast and notification pipelines using **Redis Queue Workers**.
 
-* 🔵 Google Login (OAuth token based)
-* 🔴 Admin Login (username & password)
-* 🔑 JWT Token generation
-* 🔒 Secure token verification
-
----
-
-### 📊 User & Admin Management
-
-* CRUD User
-* CRUD Admin
-* Role separation (User vs Admin)
+### 💡 Why AntrianGO?
+- ⚡ **Ultra-Low Latency:** Sub-millisecond response times powered by Go 1.25 concurrency and Gin.
+- 📬 **Event-Driven Messaging:** Background workers processing customer WhatsApp updates without blocking API threads.
+- 🏢 **Multi-Branch Multi-Tenancy:** Branch-scoped authorization isolating service data per location with Super Admin oversight.
+- 🔒 **Zero-Trust Security:** Hardened CORS policy, HMAC JWT signature validation, and Nginx rate-limiting shields.
 
 ---
 
-### ⚙️ Technical Features
+## 🛠️ Tech Stack & Architecture
 
-* ⚡ High performance with Golang
-* 🗄️ PostgreSQL database
-* 🧩 GORM ORM
-* 🌐 RESTful API (Gin)
-* 🐳 Docker Compose setup
-* 🧱 Layered architecture
-
----
-
-## 🏗️ Architecture
-
-### 🔄 Request Flow
-
-```id="archflow"
-Request
-  ↓
-Handler (HTTP Layer)
-  ↓
-Service (Business Logic)
-  ↓
-Repository (Database Access)
-  ↓
-PostgreSQL
+```mermaid
+graph TD
+    Client[📱 Mobile & Web Clients] -->|HTTPS / WSS| Nginx[🛡️ Nginx Gateway + SSL + Rate Limit]
+    Nginx -->|Proxy Pass :8080| GoApp[🚀 Go Backend API Service]
+    
+    subgraph "Core Infrastructure"
+        GoApp -->|GORM Connection Pool| Postgres[(🐘 PostgreSQL 15)]
+        GoApp -->|Enqueue Notification Jobs| Redis[(⚡ Redis 7 Cache & Queue)]
+        Worker[⚙️ Asynchronous Go Worker] -->|Dequeue & Process| Redis
+        Worker -->|HTTP Dispatch| Fonnte[💬 WhatsApp Fonnte Gateway]
+    end
 ```
 
+### 📦 Key Technologies
+| Component | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Language** | Go (Golang 1.25) | Core microservice engine & async worker |
+| **HTTP Engine** | Gin Web Framework | High-performance routing & middleware pipeline |
+| **Persistence** | PostgreSQL 15 + GORM | Relational transactional datastore with connection pooling |
+| **Message Broker** | Redis 7 | Job queuing for notifications & distributed caching |
+| **Reverse Proxy** | Nginx Alpine | TLS/SSL termination, HSTS, Rate limiting |
+| **Containerization**| Docker & Docker Compose | Containerized multi-stage reproducible deployment |
+
 ---
 
-## 📁 Struktur Project
+## 🚀 Core Capabilities
 
-```
+### 1. 🎟️ Smart Queue & Ticket Dispatch
+- Instant queue reservation with automatic estimation algorithm.
+- Live public board endpoints (sanitized for data privacy).
+- Admin real-time next-caller dispatching and ticket completion tracking.
+
+### 2. 🤖 Automated CRM & WhatsApp Hub
+- Automated WA status notifications upon ticket transitions (*Menunggu* → *Dipanggil* → *Selesai*).
+- Targeted broadcast campaigns (service reminders, promotions, and branch announcements).
+- Redis-backed background worker ensuring guaranteed job delivery with retry resiliency.
+
+### 3. 🏢 Multi-Tenant Branch Governance
+- Dedicated workspace per branch location.
+- Strict role isolation (`user`, branch-scoped `admin`, and global `super_admin`).
+- Dynamic branch assignments and staff management.
+
+### 4. 🛡️ Enterprise Security & Hardening
+- **HMAC Signature Enforcement:** Defends against JWT algorithm switching attacks.
+- **Strict Origin Whitelisting:** Verified domain validation for cross-origin communications.
+- **DDoS / Brute-Force Throttling:** Layer-7 rate limiting on critical authentication endpoints (`10 req/min`).
+
+---
+
+## 📁 Clean Domain-Driven Structure
+
+```text
 server-antrian-go/
-│
 ├── cmd/
-│   └── main.go              # Entry point aplikasi
-│
-├── config/
-│   └── database.go          # Koneksi database (GORM)
-│
-├── models/
-│   ├── user.go              # Model user
-│   └── admin.go             # Model admin
-│
-├── repository/
-│   ├── user_repository.go   # Query user ke database
-│   └── admin_repository.go  # Query admin ke database
-│
-├── service/
-│   ├── auth_service.go      # 🔥 Logic autentikasi (Google & Admin)
-│   ├── user_service.go
-│   └── admin_service.go
-│
-├── handler/
-│   ├── auth_handler.go      # 🔥 Endpoint login
-│   ├── user_handler.go
-│   └── admin_handler.go
-│
-├── routes/
-│   └── routes.go            # Routing API
-│
-├── utils/
-│   ├── jwt.go               # Generate JWT
-│   └── google.go            # Verifikasi token Google
-│
-└── .env                     # Konfigurasi environment
+│   ├── app/                # Main HTTP API Server entry point
+│   ├── worker/             # Asynchronous Redis Queue Worker entry point
+│   └── seeder/             # Database seeder utility
+├── internal/               # Domain-driven internal business packages
+│   ├── antrian/            # Queue lifecycle, estimations & ticket handlers
+│   ├── auth/               # Google OAuth, JWT tokens & authentication
+│   ├── broadcast/          # Promotional & announcement broadcasting
+│   ├── cabang/             # Branch master management & geo coordinates
+│   ├── crm/                # WhatsApp customer messaging engine
+│   ├── notification/       # Fonnte WhatsApp third-party integration
+│   └── user/               # Profile, contact book & user administration
+├── pkg/                    # Shared infrastructure modules
+│   ├── config/             # Environment & configuration loader
+│   ├── database/           # PostgreSQL pool management
+│   ├── middleware/         # Auth, Role, CORS & SuperAdmin middlewares
+│   ├── redis/              # Redis client, queue manager & worker runner
+│   └── utils/              # Crypto hash & standardized API response helpers
+├── routes/                 # Route declarations & endpoint groupings
+├── deployments/            # Production Dockerfiles, compose specs & envs
+└── nginx.conf              # Reverse proxy, SSL & rate limiting configuration
 ```
----
-
-## 🐳 Docker Setup
-
-### 📦 Services
-
-* **app** → Backend Go
-* **db** → PostgreSQL 15
 
 ---
 
-### ▶️ Run Application
+## ⚡ Quick Start
 
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/)
+- [Go 1.25+](https://go.dev/dl/) *(for local development)*
+
+### 1️⃣ Clone & Configure Environment
 ```bash
-docker-compose up --build
+git clone https://github.com/rakaascode/server-antrian-go.git
+cd server-antrian-go
+
+# Setup production environment
+cp deployments/.env.example deployments/.env
+nano deployments/.env
+```
+
+### 2️⃣ Launch with Docker Compose (One-Liner)
+```bash
+cd deployments
+docker compose up -d --build
+```
+
+### 3️⃣ Verify Health & Status
+```bash
+curl -i http://localhost:8080/
+```
+```json
+{
+  "status": "online",
+  "app_name": "API Server Antrian Yamaha Lautan Teduh",
+  "version": "1.0.0",
+  "maintainer": "Lautan Teduh IT Team"
+}
 ```
 
 ---
 
-### 🌐 Access API
+## 📌 API Endpoints Overview
 
-```id="url"
-http://localhost:8080
-```
-
----
-
-## ⚙️ Environment Configuration
-
-Sudah di-handle oleh Docker Compose
-
----
-
-## 🔐 Authentication Flow
-
-### 🔵 Google Login
-
-```id="googleflow"
-Client → kirim Google Token
-        ↓
-Backend verify ke Google
-        ↓
-User dibuat / ditemukan
-        ↓
-JWT dikirim ke client
-```
+| Method | Path | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Public | Live System Health & Meta Info |
+| `POST` | `/api/auth/google` | Public | User Google OAuth Login / Register |
+| `POST` | `/api/auth/admin/login` | Public | Branch / Super Admin Login |
+| `GET` | `/api/cabang` | Public | List all active branch locations |
+| `GET` | `/api/cabang/:id/antrian` | Public | Public view of real-time branch queue |
+| `POST` | `/api/antrian` | User (JWT) | Book a new queue number |
+| `GET` | `/api/antrian/me` | User (JWT) | Get personal queue history & active tickets |
+| `POST` | `/api/antrian/call-next` | Admin (JWT) | Call the next pending queue ticket |
+| `PUT` | `/api/antrian/:id/selesai` | Admin (JWT) | Complete service ticket |
+| `POST` | `/api/crm/send` | Admin (JWT) | Direct dispatch WhatsApp message |
+| `POST` | `/api/broadcast` | Admin (JWT) | Broadcast promo/update to branch customers |
+| `POST` | `/api/super/admin/cabang` | Super Admin | Provision new branch administrator |
 
 ---
 
-### 🔴 Admin Login
+## 🤝 Contributing & Standards
 
-```id="adminflow"
-Client → username & password
-        ↓
-Cek ke database
-        ↓
-Generate JWT
-        ↓
-Return token
-```
+Contributions are welcome! Please follow standard Go conventions:
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## 📌 API Endpoints
+## 📄 License & Maintainer
 
-### 🔐 Auth
+Distributed under the **Apache 2.0 License**. See [`LICENSE`](LICENSE) for more information.
 
-```id="authapi"
-POST /api/login/google
-POST /api/login/admin
-```
+Maintained with ❤️ by **Raka Saputra & Lautan Teduh IT Team**.
 
----
-
-### 👤 User
-
-```id="userapi"
-GET    /api/users
-POST   /api/users
-GET    /api/users/:id
-PUT    /api/users/:id
-DELETE /api/users/:id
-```
-
----
-
-### 👨‍💼 Admin
-
-```id="adminapi"
-GET    /api/admins
-POST   /api/admins
-```
-
----
-
-## 🔧 Key Implementation
-
-### 🔐 JWT Generation
-
-* Token dibuat di `utils/jwt.go`
-* Digunakan untuk autentikasi request selanjutnya
-
----
-
-### 🌐 Google Token Verification
-
-* Token diverifikasi di `utils/google.go`
-* Tidak percaya token langsung dari client
-
----
-
-## ⚠️ Best Practices
-
-* 🔒 Jangan commit `.env`
-* 🔑 Gunakan bcrypt untuk password admin
-* 🔐 Selalu verify Google token
-* 🧪 Tambahkan validation di handler
-
----
-
-## 🚀 Roadmap
-
-* [ ] JWT Middleware
-* [ ] Role-based access control
-* [ ] Pagination
-* [ ] Logging system
-* [ ] Unit testing
-* [ ] API documentation (Swagger)
-
----
-
-## 🐛 Troubleshooting
-
-### ❌ Cannot connect to DB
-
-* Pastikan container `db` sudah running
-* Cek `DB_HOST=db` (bukan localhost)
-
----
-
-### ❌ Port already in use
-
-* Ganti port di docker-compose
-
----
-
-### ❌ Google login gagal
-
-* Pastikan `GOOGLE_CLIENT_ID` benar
-* Token belum expired
-
----
-
-## 📄 License
-
-Licensed under the **Apache License 2.0**.
-
----
-
-## 🙌 Acknowledgments
-
-* Golang community
-* GORM contributors
-* Gin framework
-* PostgreSQL ecosystem
-* Docker community
