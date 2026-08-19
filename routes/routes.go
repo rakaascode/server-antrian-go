@@ -135,8 +135,10 @@ lteduh-antrean@googlegroups.com`)
 		adminOnly.POST("/crm/reminders", h.CRM.ReminderFromAntrian)  // Mode 2: dari data antrian
 
 		// Broadcast (notifikasi & promo)
-		adminOnly.POST("/broadcast", h.Broadcast.Create)          // kirim broadcast baru
-		adminOnly.GET("/broadcast/all", h.Broadcast.GetAll)       // lihat semua broadcast yang pernah dikirim
+		adminOnly.POST("/broadcast", h.Broadcast.Create)             // kirim broadcast baru
+		adminOnly.GET("/broadcast/all", h.Broadcast.GetAll)          // lihat semua broadcast yang pernah dikirim
+		adminOnly.DELETE("/broadcast/all", h.Broadcast.DeleteAll)    // hapus SEMUA broadcast sekaligus
+		adminOnly.DELETE("/broadcast/:id", h.Broadcast.Delete)       // hapus satu broadcast by ID
 
 		// Manajemen Cabang
 		adminOnly.POST("/cabang", h.Cabang.Create)
