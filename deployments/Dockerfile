@@ -1,22 +1,20 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Izinkan Go mendownload toolchain yang lebih baru jika modul membutuhkannya
-ENV GOTOOLCHAIN=auto
-
-# Copy dependency files dulu
+# 1. Copy file dependency terlebih dahulu
 COPY go.mod go.sum ./
 
-# Copy semua source code
+# 2. Download dependency (akan di-cache oleh Docker selama go.mod & go.sum tidak berubah)
+RUN go mod download
+
+# 3. Copy seluruh source code
 COPY . .
 
-# Sinkronisasi dan download dependency
-RUN go mod tidy
-
-
-# Build binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/app
+# 4. Build binary dengan caching compile cache
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/app
 
 # Final image — minimal alpine
 FROM alpine:3.19
