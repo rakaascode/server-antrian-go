@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -64,8 +65,15 @@ func main() {
 	cabangSvc := cabang.NewCabangService(cabangRepo)
 	cabangHandler := cabang.NewCabangHandler(cabangSvc, antrianSvc)
 
+	// Set Gin mode
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "production" || os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	// Setup router
 	r := gin.Default()
+	_ = r.SetTrustedProxies(nil)
 	routes.SetupRoutes(r, routes.Handlers{
 		Auth:      authHandler,
 		User:      userHandler,

@@ -21,6 +21,9 @@ type Handlers struct {
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
+	r.Use(middleware.CORSMiddleware())
+	r.Use(gin.Recovery())
+
 	// ── Public Pages ──────────────────────────────────────────────────────────
 	r.GET("/privacy-policy", func(c *gin.Context) {
 		c.String(200, `Last updated: 14 May 2026
