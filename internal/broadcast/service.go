@@ -15,6 +15,10 @@ type BroadcastService interface {
 	GetForUser(userID uint) ([]BroadcastListItem, error)
 	// Semua: lihat detail satu broadcast
 	GetByID(id uint) (BroadcastDetail, error)
+	// Admin: hapus satu broadcast by ID
+	Delete(id uint) error
+	// Admin: hapus semua broadcast
+	DeleteAll() error
 }
 
 type broadcastService struct {
@@ -111,4 +115,14 @@ func toListItems(list []Broadcast) []BroadcastListItem {
 		})
 	}
 	return result
+}
+
+// Delete menghapus satu broadcast berdasarkan ID
+func (s *broadcastService) Delete(id uint) error {
+	return s.repo.Delete(id)
+}
+
+// DeleteAll menghapus seluruh broadcast
+func (s *broadcastService) DeleteAll() error {
+	return s.repo.DeleteAll()
 }
