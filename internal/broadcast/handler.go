@@ -1,10 +1,12 @@
 package broadcast
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type BroadcastHandler struct {
@@ -71,4 +73,33 @@ func (h *BroadcastHandler) GetByID(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": detail})
+}
+
+// Delete DELETE /api/broadcast/:id  (admin only)
+// Hapus satu broadcast berdasarkan ID
+func (h *BroadcastHandler) Delete(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "id tidak valid"})
+		return
+	}
+	if err := h.service.Delete(uint(id)); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "broadcast tidak ditemukan"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Broadcast berhasil dihapus"})
+}
+
+// DeleteAll DELETE /api/broadcast/all  (admin only)
+// Hapus seluruh broadcast sekaligus
+func (h *BroadcastHandler) DeleteAll(c *gin.Context) {
+	if err := h.service.DeleteAll(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Semua broadcast berhasil dihapus"})
 }
