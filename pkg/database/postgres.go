@@ -2,7 +2,9 @@ package database
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,11 +22,24 @@ func ConnectDB() (*gorm.DB, error) {
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	// ── Connection Pool Management ──────────────────────────────────────────
+	// Batas koneksi idle dan koneksi maksimal
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(50)
+	sqlDB.SetConnMaxLifetime(1 * time.Hour)
+	sqlDB.SetConnMaxIdleTime(15 * time.Minute)
+
+	log.Println("✅ PostgreSQL connection pool configured")
 	return db, nil
 }

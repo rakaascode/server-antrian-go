@@ -13,12 +13,13 @@ services:
       # Database
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: admin
-      DB_PASS: ta-lautan
-      DB_NAME: ta_lautan_db
+      DB_USER: ${DB_USER:-admin}
+      DB_PASS: ${DB_PASS:-ta-lautan}
+      DB_NAME: ${DB_NAME:-ta_lautan_db}
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-ta-redis-secret-2026}
       # JWT & Auth
       JWT_SECRET: ${JWT_SECRET}
       # Google OAuth
@@ -38,7 +39,7 @@ services:
     image: redis:7-alpine
     container_name: redis_ta_lautan_teduh
     restart: always
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-ta-redis-secret-2026}"]
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
@@ -46,7 +47,7 @@ services:
     networks:
       - appnet
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-ta-redis-secret-2026}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -63,6 +64,7 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-ta-redis-secret-2026}
       FONNTE_TOKEN: ${FONNTE_TOKEN}
     depends_on:
       redis:
@@ -75,9 +77,9 @@ services:
     container_name: database_ta_lautan_teduh
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: ta-lautan
-      POSTGRES_DB: ta_lautan_db
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASS:-ta-lautan}
+      POSTGRES_DB: ${DB_NAME:-ta_lautan_db}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -85,7 +87,7 @@ services:
     networks:
       - appnet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d ta_lautan_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-ta_lautan_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
