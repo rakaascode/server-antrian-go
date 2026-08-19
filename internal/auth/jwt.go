@@ -36,6 +36,9 @@ func GenerateToken(userID uint, email, username, role string, cabangID *uint) (s
 func ParseToken(tokenStr string) (*Claims, error) {
 	secret := []byte(os.Getenv("JWT_SECRET"))
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
 		return secret, nil
 	})
 	if err != nil {
