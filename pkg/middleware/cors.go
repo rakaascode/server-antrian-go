@@ -20,11 +20,13 @@ func isAllowedOrigin(origin string) bool {
 		return true
 	}
 
-	// Dukungan untuk vercel preview deployments
-	if strings.HasSuffix(origin, "-rakaascodes-projects.vercel.app") ||
-		strings.HasPrefix(origin, "https://crm-lautan-teduh-") ||
-		strings.HasPrefix(origin, "https://sistem-antrean-") {
-		return true
+	// Dukungan untuk vercel preview deployments (wajib protokol HTTPS dan domain resmi *.vercel.app)
+	if strings.HasPrefix(origin, "https://") && strings.HasSuffix(origin, ".vercel.app") {
+		if strings.HasSuffix(origin, "-rakaascodes-projects.vercel.app") ||
+			strings.HasPrefix(origin, "https://crm-lautan-teduh-") ||
+			strings.HasPrefix(origin, "https://sistem-antrean-") {
+			return true
+		}
 	}
 
 	return false
