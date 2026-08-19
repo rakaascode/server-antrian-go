@@ -9,6 +9,10 @@ type BroadcastRepository interface {
 	FindForUser(cabangIDs []uint) ([]Broadcast, error)
 	FindByID(id uint) (Broadcast, error)
 	FindByCabang(cabangID uint) ([]Broadcast, error)
+	// Delete hapus satu broadcast berdasarkan ID
+	Delete(id uint) error
+	// DeleteAll hapus seluruh broadcast
+	DeleteAll() error
 }
 
 type broadcastRepository struct {
@@ -52,4 +56,21 @@ func (r *broadcastRepository) FindByCabang(cabangID uint) ([]Broadcast, error) {
 	err := r.db.Where("cabang_id = ? AND tipe = ?", cabangID, TipeAntrian).
 		Order("created_at desc").Find(&list).Error
 	return list, err
+}
+
+// Delete menghapus satu broadcast berdasarkan ID
+func (r *broadcastRepository) Delete(id uint) error {
+	result := r.db.Delete(&Broadcast{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// DeleteAll menghapus seluruh data broadcast
+func (r *broadcastRepository) DeleteAll() error {
+	return r.db.Where("1 = 1").Delete(&Broadcast{}).Error
 }
