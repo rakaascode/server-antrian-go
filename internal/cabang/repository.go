@@ -20,7 +20,7 @@ func NewCabangRepository(db *gorm.DB) CabangRepository {
 
 func (r *cabangRepository) FindAll() ([]Cabang, error) {
 	var list []Cabang
-	err := r.db.Order("nama asc").Find(&list).Error
+	err := r.db.Order("id asc").Find(&list).Error
 	return list, err
 }
 
