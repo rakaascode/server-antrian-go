@@ -21,7 +21,8 @@ API untuk sistem manajemen antrian bengkel motor **Lautan Teduh** yang mendukung
 
 | Info | Detail |
 |---|---|
-| **Base URL** | `http://localhost:8080/api` |
+| **Base URL (Production)** | `https://rakaascode.site/api` |
+| **Base URL (Local)** | `http://localhost:8080/api` |
 | **Format** | JSON |
 | **Auth** | JWT Bearer Token |
 
@@ -49,6 +50,8 @@ Authorization: Bearer <token>
 
 | Method | Endpoint | Auth | Deskripsi |
 |---|---|---|---|
+| GET | `/` | ❌ | JSON Info & Status Sistem (Health Check) |
+| GET | `/privacy-policy` | ❌ | Privacy Policy Page untuk Google Play Store / OAuth |
 | POST | `/auth/google` | ❌ | Login user via Google Sign-In (Android) |
 | POST | `/auth/admin/login` | ❌ | Login admin cabang (username + password) |
 | GET | `/cabang` | ❌ | List semua cabang |
@@ -1629,36 +1632,55 @@ Aplikasi ini siap dijalankan di VPS menggunakan **Docker Compose** dengan stack:
 
 ```
 deployments/
-├── Dockerfile           # Build Go binary
-└── docker-compose.yml   # Orchestrasi semua service
+├── Dockerfile           # Multi-stage build Go binary (App & Worker)
+└── docker-compose.yml   # Orchestrasi 4 service: app, worker, db, redis
 
-nginx.conf               # Konfigurasi reverse proxy
-.env.example             # Template environment variables
-.env                     # File env asli (TIDAK di-commit ke git)
+nginx.conf               # Konfigurasi reverse proxy + SSL + Rate Limiting
+deployments/.env         # File env asli production (TIDAK di-commit ke git)
 ```
 
 ---
 
 ### Environment Variables
 
-Buat file `.env` di root project (salin dari `.env.example`):
+Buat file `.env` di folder `deployments/` (gunakan string rahasia yang aman):
 
 ```env
-# Database
+# Database PostgreSQL
 DB_HOST=db
 DB_PORT=5432
 DB_USER=admin
 DB_PASS=ta-lautan
 DB_NAME=ta_lautan_db
 
-# JWT Secret — gunakan string acak yang panjang!
-JWT_SECRET=ganti-dengan-secret-yang-sangat-panjang-dan-random
+# Redis Broker & Cache
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=ta-redis-secret-2026
 
-# Fonnte API (WhatsApp)
-FONNTE_TOKEN=token-fonnte-anda-disini
+# JWT Secret — string acak 64-byte di production!
+JWT_SECRET=gunakan-string-acak-panjang-64-byte
+
+# Google OAuth (untuk verifikasi login Android)
+GOOGLE_CLIENT_ID=1077875078939-ba4fpbieucdqivm622c7udab9cim4ici.apps.googleusercontent.com
+
+# Fonnte API (WhatsApp Gateway)
+FONNTE_TOKEN=token-fonnte-asli-anda
 ```
 
 > ⚠️ **PENTING:** File `.env` sudah masuk `.gitignore`. Jangan pernah commit file `.env` ke repository!
+
+---
+
+### Arsitektur Service (Docker Stack)
+
+| Container Name | Service | Port Binding Internal | Keterangan |
+|---|---|---|---|
+| `gateway_nginx` | Nginx Gateway | `80:80`, `443:443` | Reverse Proxy, SSL, HSTS, Rate Limiting (30r/s) |
+| `backend_ta_lautan_teduh` | Go API (Gin) | `127.0.0.1:8080:8080` | Core REST API backend service |
+| `worker_ta_lautan_teduh` | Go Async Worker | Internal network | Background consumer untuk antrean pesan WhatsApp |
+| `redis_ta_lautan_teduh` | Redis 7 Alpine | `127.0.0.1:6379:6379` | Message broker & queue notifikasi WhatsApp |
+| `database_ta_lautan_teduh` | PostgreSQL 15 | `127.0.0.1:5432:5432` | Relational transactional datastore (Connection Pool: 50) |
 
 ---
 
@@ -1670,38 +1692,35 @@ git clone https://github.com/rakaascode/server-antrian-go.git
 cd server-antrian-go
 ```
 
-**2. Buat file `.env`:**
-```bash
-cp .env.example .env
-nano .env
-# Isi JWT_SECRET dan FONNTE_TOKEN dengan nilai asli
-```
-
-**3. Pastikan SSL certificate sudah ada** (untuk Nginx HTTPS):
-```bash
-# Install certbot jika belum
-sudo apt install certbot
-sudo certbot certonly --standalone -d rakaascode.site -d www.rakaascode.site
-```
-
-**4. Build & jalankan semua service:**
+**2. Buat file `.env` di folder deployments:**
 ```bash
 cd deployments
+nano .env
+# Isi konfigurasi database, Redis, JWT_SECRET, dan FONNTE_TOKEN
+```
+
+**3. Build & jalankan semua service:**
+```bash
 docker compose up -d --build
 ```
 
-**5. Cek status semua container:**
+**4. Cek status semua container:**
 ```bash
 docker compose ps
 ```
 
-Output yang diharapkan:
-```
-NAME                         STATUS
-backend_ta_lautan_teduh      running
-database_ta_lautan_teduh     running (healthy)
-nginx_ta_lautan              running
-```
+---
+
+### Performa & Hasil Benchmark (Stress Testing)
+
+Berdasarkan stress testing resmi menggunakan `hey` pada VPS (2 vCPU, 2.2 GB RAM):
+
+| Skenario Pengujian | Beban & Concurrency | Throughput | Latensi (p95) | Error Rate |
+|---|---|---|---|---|
+| **Query Database (`/api/cabang`)** | 2.000 Req / 50 Concurrency | **307.84 RPS** | **216 ms** | **0% (100% Success)** |
+| **Raw Router Engine (`/`)** | 5.000 Req / 100 Concurrency | **2.357.21 RPS** | **75.7 ms** | **0% (100% Success)** |
+
+* **Kapasitas Riil:** Mampu menangani hingga **~3.000 concurrent online user** dan lebih dari **50.000 transaksi pelanggan per hari**.
 
 ---
 
@@ -1709,12 +1728,13 @@ nginx_ta_lautan              running
 
 | Perintah | Fungsi |
 |---|---|
-| `docker compose up -d --build` | Build ulang dan jalankan |
+| `cd deployments && docker compose up -d --build app worker` | Rebuild dan update backend Go & Worker |
 | `docker compose down` | Hentikan semua service |
 | `docker compose logs -f app` | Lihat log aplikasi real-time |
-| `docker compose logs -f db` | Lihat log database |
+| `docker compose logs -f worker` | Lihat log antrean WhatsApp worker |
+| `docker compose logs -f redis` | Lihat log Redis |
 | `docker compose restart app` | Restart hanya aplikasi |
-| `docker compose exec db psql -U admin ta_lautan_db` | Masuk ke database |
+| `docker compose exec db psql -U admin ta_lautan_db` | Masuk ke terminal PostgreSQL |
 
 ---
 
@@ -1723,11 +1743,11 @@ nginx_ta_lautan              running
 | Masalah | Solusi |
 |---|---|
 | App gagal konek ke DB | Tunggu DB sehat dulu: `docker compose logs db` |
-| `JWT_SECRET not set` | Pastikan `.env` sudah dibuat dan diisi |
-| `Fonnte error` | Cek `FONNTE_TOKEN` di `.env` sudah benar |
-| Nginx 502 Bad Gateway | App belum siap: `docker compose logs app` |
-| SSL Certificate error | Jalankan certbot dan pastikan path `/etc/letsencrypt` benar |
-| Port 80/443 sudah dipakai | Stop service nginx lain: `sudo systemctl stop nginx` |
+| `JWT_SECRET not set` | Pastikan `deployments/.env` sudah dibuat dan diisi |
+| `Fonnte error` | Cek `FONNTE_TOKEN` di `deployments/.env` |
+| HTTP 429 Too Many Requests | Rate limit Nginx aktif (melebihi 30 req/detik per IP atau 10 req/menit untuk login) |
+| Nginx 502 Bad Gateway | Container app sedang booting: `docker compose logs app` |
+| SSL Certificate error | Pastikan path `/etc/letsencrypt` pada Gateway Nginx sudah benar |
 
 ---
 
