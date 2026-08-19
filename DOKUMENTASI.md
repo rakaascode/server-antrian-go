@@ -79,6 +79,8 @@ Authorization: Bearer <token>
 | POST | `/crm/reminders` | ✅ Admin | Kirim pengingat WA dari data antrian |
 | POST | `/broadcast` | ✅ Admin | Kirim broadcast in-app (promo / per cabang) |
 | GET | `/broadcast/all` | ✅ Admin | Lihat semua broadcast yang pernah dikirim |
+| **DELETE** | **`/broadcast/all`** | ✅ Admin | **Hapus SEMUA broadcast sekaligus** |
+| **DELETE** | **`/broadcast/:id`** | ✅ Admin | **Hapus satu broadcast berdasarkan ID** |
 | GET | `/broadcast` | ✅ User | Inbox notifikasi (promo + antrian cabang saya) |
 | GET | `/broadcast/:id` | ✅ User | Detail lengkap satu notifikasi |
 | **GET** | **`/admin/users/kontak`** | ✅ Admin | **Ambil semua nama dan nomor WA user** |
@@ -1507,6 +1509,61 @@ curl http://localhost:8080/api/broadcast/3 \
 
 ### `GET /broadcast/all` — Admin
 Lihat semua broadcast yang pernah dikirim (semua tipe, semua cabang).
+
+**🧪 cURL:**
+```bash
+curl http://localhost:8080/api/broadcast/all \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+---
+
+### `DELETE /broadcast/:id` — Admin
+Hapus **satu broadcast** berdasarkan ID. Broadcast akan dihapus permanen dari database.
+
+**🧪 cURL:**
+```bash
+curl -X DELETE http://localhost:8080/api/broadcast/5 \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+**📤 Response `200` (berhasil):**
+```json
+{ "success": true, "message": "Broadcast berhasil dihapus" }
+```
+
+**📤 Response `404` (ID tidak ditemukan):**
+```json
+{ "success": false, "message": "broadcast tidak ditemukan" }
+```
+
+**📤 Response `400` (ID tidak valid):**
+```json
+{ "success": false, "message": "id tidak valid" }
+```
+
+---
+
+### `DELETE /broadcast/all` — Admin
+Hapus **seluruh broadcast** sekaligus. Operasi ini **tidak dapat dibatalkan** — semua data broadcast di database akan dihapus permanen.
+
+> ⚠️ **Perhatian:** Endpoint ini harus dipanggil di path `/broadcast/all` (literal), bukan `/broadcast/:id`. Route `DELETE /broadcast/all` terdaftar **sebelum** `DELETE /broadcast/:id` agar tidak bentrok.
+
+**🧪 cURL:**
+```bash
+curl -X DELETE http://localhost:8080/api/broadcast/all \
+  -H "Authorization: Bearer <token_admin>"
+```
+
+**📤 Response `200` (berhasil):**
+```json
+{ "success": true, "message": "Semua broadcast berhasil dihapus" }
+```
+
+**📤 Response `500` (gagal server):**
+```json
+{ "success": false, "message": "<pesan error database>" }
+```
 
 ---
 
