@@ -13,6 +13,7 @@ import (
 	"github.com/rakaascode/server-antrian-go.git/internal/crm"
 	"github.com/rakaascode/server-antrian-go.git/internal/user"
 	"github.com/rakaascode/server-antrian-go.git/pkg/database"
+	"github.com/rakaascode/server-antrian-go.git/pkg/redis"
 	"github.com/rakaascode/server-antrian-go.git/routes"
 )
 
@@ -26,6 +27,11 @@ func main() {
 		log.Fatal("❌ Gagal konek DB:", err)
 	}
 	log.Println("✅ DB connected")
+
+	// Init Redis (opsional, jika tidak ada fallback graceful)
+	if _, err := redis.InitRedis(); err != nil {
+		log.Println("⚠️ Redis tidak terhubung, sistem antrian Redis dinonaktifkan sementara")
+	}
 
 	// Auto migrate
 	if err := db.AutoMigrate(
