@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rakaascode/server-antrian-go.git/internal/antrian"
 	"github.com/rakaascode/server-antrian-go.git/internal/auth"
@@ -23,6 +25,17 @@ type Handlers struct {
 func SetupRoutes(r *gin.Engine, h Handlers) {
 	r.Use(middleware.CORSMiddleware())
 	r.Use(gin.Recovery())
+
+	// ── Root Endpoint: JSON Info API ──────────────────────────────────────────
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":      "online",
+			"app_name":    "API Server Antrian Yamaha Lautan Teduh",
+			"version":     "1.0.0",
+			"server_time": time.Now().Format(time.RFC3339),
+			"maintainer":  "Lautan Teduh IT Team",
+		})
+	})
 
 	// ── Public Pages ──────────────────────────────────────────────────────────
 	r.GET("/privacy-policy", func(c *gin.Context) {
