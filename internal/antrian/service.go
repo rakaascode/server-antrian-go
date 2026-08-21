@@ -52,7 +52,9 @@ func (s *antrianService) AmbilAntrian(req AmbilAntrianRequest, userID *uint) (An
 		return Antrian{}, errors.New("no_wa_reminder wajib diisi jika reminder_aktif = true")
 	}
 
-	count, err := s.repo.CountTodayByCabang(req.CabangID)
+	// Ambil nomor antrian tertinggi hari ini (MAX), lalu +1.
+	// Menggunakan MAX bukan COUNT agar nomor tidak loncat saat ada antrian yang dibatalkan.
+	maxNomor, err := s.repo.MaxNomorTodayByCabang(req.CabangID)
 	if err != nil {
 		return Antrian{}, err
 	}
@@ -60,7 +62,7 @@ func (s *antrianService) AmbilAntrian(req AmbilAntrianRequest, userID *uint) (An
 	a := Antrian{
 		CabangID:          req.CabangID,
 		UserID:            userID,
-		NomorAntrian:      int(count) + 1,
+		NomorAntrian:      maxNomor + 1,
 		Status:            StatusMenunggu,
 		NamaPemilik:       req.NamaPemilik,
 		NoPolisi:          req.NoPolisi,
@@ -172,11 +174,6 @@ func (s *antrianService) Delete(id, cabangID uint) error {
 
 // GetStatusCabang info realtime: nomor yang sedang dipanggil + total menunggu
 func (s *antrianService) GetStatusCabang(cabangID uint) (StatusCabangResponse, error) {
-	totalMenunggu, err := s.repo.CountTodayByCabang(cabangID)
-	if err != nil {
-		return StatusCabangResponse{}, err
-	}
-
 	// Hitung hanya yang berstatus "menunggu" hari ini
 	listMenunggu, _ := s.repo.FindByCabangAndStatus(cabangID, StatusMenunggu)
 	total := int64(len(listMenunggu))
@@ -184,7 +181,6 @@ func (s *antrianService) GetStatusCabang(cabangID uint) (StatusCabangResponse, e
 	dipanggil, err := s.repo.FindLatestDipanggil(cabangID)
 	if err != nil {
 		// Belum ada yang dipanggil hari ini
-		_ = totalMenunggu
 		return StatusCabangResponse{
 			NomorDipanggil: nil,
 			StatusPanggil:  "belum ada",

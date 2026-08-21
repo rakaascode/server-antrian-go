@@ -1,8 +1,6 @@
 package antrian
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 )
 
@@ -14,7 +12,7 @@ type AntrianRepository interface {
 	Create(a Antrian) (Antrian, error)
 	UpdateStatus(id uint, status string) error
 	Delete(id uint) error
-	CountTodayByCabang(cabangID uint) (int64, error)
+	MaxNomorTodayByCabang(cabangID uint) (int, error)
 	// Status antrian realtime
 	FindLatestDipanggil(cabangID uint) (*Antrian, error)
 	CountMenungguSebelum(cabangID uint, nomorAntrian int) (int64, error)
@@ -70,13 +68,22 @@ func (r *antrianRepository) Delete(id uint) error {
 	return r.db.Delete(&Antrian{}, id).Error
 }
 
-func (r *antrianRepository) CountTodayByCabang(cabangID uint) (int64, error) {
-	var count int64
-	today := time.Now().Truncate(24 * time.Hour)
+// MaxNomorTodayByCabang mengembalikan nomor antrian tertinggi hari ini untuk cabang tersebut.
+// Menggunakan MAX() sehingga tidak terpengaruh antrian yang dibatalkan —
+// nomor berikutnya selalu MAX + 1, tanpa loncat.
+func (r *antrianRepository) MaxNomorTodayByCabang(cabangID uint) (int, error) {
+	var maxNomor *int
 	err := r.db.Model(&Antrian{}).
-		Where("cabang_id = ? AND created_at >= ?", cabangID, today).
-		Count(&count).Error
-	return count, err
+		Select("MAX(nomor_antrian)").
+		Where("cabang_id = ? AND DATE(created_at) = CURRENT_DATE", cabangID).
+		Scan(&maxNomor).Error
+	if err != nil {
+		return 0, err
+	}
+	if maxNomor == nil {
+		return 0, nil
+	}
+	return *maxNomor, nil
 }
 
 // FindLatestDipanggil ambil antrian yang sedang dipanggil (terbesar nomornya)
