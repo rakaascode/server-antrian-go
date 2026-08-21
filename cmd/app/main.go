@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/rakaascode/server-antrian-go.git/internal/broadcast"
 	"github.com/rakaascode/server-antrian-go.git/internal/cabang"
 	"github.com/rakaascode/server-antrian-go.git/internal/crm"
+	"github.com/rakaascode/server-antrian-go.git/internal/notification"
 	"github.com/rakaascode/server-antrian-go.git/internal/user"
 	"github.com/rakaascode/server-antrian-go.git/pkg/database"
 	"github.com/rakaascode/server-antrian-go.git/pkg/redis"
@@ -43,6 +45,10 @@ func main() {
 		log.Fatal("❌ Gagal migrasi:", err)
 	}
 	log.Println("✅ Migrasi selesai")
+
+	// Start Background Auto Reminder Scheduler (H-30 Menit via WhatsApp)
+	ctx := context.Background()
+	notification.StartAutoReminderScheduler(ctx, db)
 
 	// Seed data awal cabang (hanya berjalan jika tabel masih kosong)
 	cabang.Seed(db)
