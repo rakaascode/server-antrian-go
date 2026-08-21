@@ -20,7 +20,7 @@ type AntrianCrmItem struct {
 	NomorAntrian  int       `json:"nomor_antrian"`
 	Status        string    `json:"status"`
 	NamaPemilik   string    `json:"nama_pemilik"`
-	NoHP          string    `json:"no_hp"`
+	NoPolisi      string    `json:"no_polisi"`
 	NoWAReminder  string    `json:"no_wa_reminder,omitempty"`
 	ReminderAktif bool      `json:"reminder_aktif"`
 	MerkMotor     string    `json:"merk_motor"`

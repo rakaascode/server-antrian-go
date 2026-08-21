@@ -51,7 +51,7 @@ func (s *crmService) ReminderFromAntrian(req ReminderFromAntrianRequest, cabangI
 	// Tentukan nomor WA tujuan (prioritas: NoWAReminder, fallback: NoHP)
 	noWA := a.NoWAReminder
 	if noWA == "" {
-		noWA = a.NoHP
+		// noWA = a.NoHP (no_polisi bukan nomor wa)
 	}
 	if noWA == "" {
 		return errors.New("nomor WhatsApp pelanggan tidak tersedia di data antrian ini")
@@ -97,7 +97,7 @@ func (s *crmService) GetAntrianForCrm(cabangID uint) ([]AntrianCrmItem, error) {
 			NomorAntrian:  a.NomorAntrian,
 			Status:        a.Status,
 			NamaPemilik:   a.NamaPemilik,
-			NoHP:          a.NoHP,
+			NoPolisi:      a.NoPolisi,
 			NoWAReminder:  a.NoWAReminder,
 			ReminderAktif: a.ReminderAktif,
 			MerkMotor:     a.MerkMotor,

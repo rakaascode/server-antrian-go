@@ -63,7 +63,7 @@ func (s *antrianService) AmbilAntrian(req AmbilAntrianRequest, userID *uint) (An
 		NomorAntrian:      int(count) + 1,
 		Status:            StatusMenunggu,
 		NamaPemilik:       req.NamaPemilik,
-		NoHP:              req.NoHP,
+		NoPolisi:          req.NoPolisi,
 		MerkMotor:         req.MerkMotor,
 		TipeMotor:         req.TipeMotor,
 		NoRangka:          req.NoRangka,

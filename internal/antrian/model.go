@@ -19,7 +19,7 @@ type Antrian struct {
 
 	// Identitas pemilik kendaraan (sesuai STNK)
 	NamaPemilik string `json:"nama_pemilik"`
-	NoHP        string `json:"no_hp"` // nomor HP sesuai STNK / kontak utama
+	NoPolisi    string `json:"no_polisi"` // nomor polisi plat kendaraan
 
 	// Data kendaraan
 	MerkMotor      string `json:"merk_motor"`
@@ -34,7 +34,7 @@ type Antrian struct {
 
 	// Pengingat WA (opsional — diisi user jika mau dapat notif WA)
 	ReminderAktif bool   `json:"reminder_aktif" gorm:"default:false"`
-	NoWAReminder  string `json:"no_wa_reminder,omitempty"` // bisa beda dari NoHP
+	NoWAReminder  string `json:"no_wa_reminder,omitempty"` // nomor WA untuk notifikasi
 
 	Catatan   string    `json:"catatan,omitempty"`
 	CreatedAt time.Time `json:"created_at"`

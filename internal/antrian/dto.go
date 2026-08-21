@@ -8,7 +8,7 @@ type AmbilAntrianRequest struct {
 
 	// Identitas pemilik sesuai STNK
 	NamaPemilik string `json:"nama_pemilik" binding:"required"`
-	NoHP        string `json:"no_hp" binding:"required"` // nomor HP sesuai STNK
+	NoPolisi    string `json:"no_polisi" binding:"required"` // nomor polisi plat kendaraan
 
 	// Data kendaraan
 	MerkMotor      string `json:"merk_motor" binding:"required"`
@@ -47,7 +47,7 @@ type AntrianDetailResponse struct {
 	Status       string `json:"status"`
 
 	NamaPemilik    string `json:"nama_pemilik"`
-	NoHP           string `json:"no_hp"`
+	NoPolisi       string `json:"no_polisi"`
 	MerkMotor      string `json:"merk_motor"`
 	TipeMotor      string `json:"tipe_motor"`
 	NoRangka       string `json:"no_rangka"`
