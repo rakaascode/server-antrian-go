@@ -45,13 +45,18 @@ func StartAutoReminderScheduler(ctx context.Context, db *gorm.DB) {
 }
 
 func checkAndSendUpcomingReminders(db *gorm.DB) {
-	now := time.Now()
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		loc = time.FixedZone("WIB", 7*3600)
+	}
+
+	now := time.Now().In(loc)
 	targetTime := now.Add(30 * time.Minute)
 	targetHourMinute := targetTime.Format("15:04") // e.g. "09:30"
 	targetHour := targetTime.Format("15:00")       // e.g. "09:00"
 
 	var antrians []ScheduledAntrianItem
-	err := db.Table("antrians").
+	err = db.Table("antrians").
 		Select("id, cabang_id, nama_pemilik, no_wa_reminder, merk_motor, tipe_motor, nomor_antrian, tanggal_kedatangan, estimasi_jam").
 		Where("status = ? AND reminder_aktif = ? AND no_wa_reminder != ? AND DATE(tanggal_kedatangan) = CURRENT_DATE", "menunggu", true, "").
 		Scan(&antrians).Error
