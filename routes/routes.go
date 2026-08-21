@@ -24,6 +24,7 @@ type Handlers struct {
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
 	r.Use(middleware.CORSMiddleware())
+	r.Static("/uploads", "./uploads")
 	r.Use(gin.Recovery())
 
 	// ── Root Endpoint: JSON Info API ──────────────────────────────────────────
@@ -111,12 +112,14 @@ lteduh-antrean@googlegroups.com`)
 
 		// Update profil (alamat, avatar, nama)
 		userProtected.PUT("/user/profile", h.User.UpdateProfile)
+		userProtected.POST("/user/avatar", h.User.UploadAvatar)
+		userProtected.POST("/users/avatar", h.User.UploadAvatar)
 		userProtected.PUT("/users/profile", h.User.UpdateProfile) // alias plural
 
 		// Kontak WA user — simpan, lihat, update, hapus
 		userProtected.GET("/users/kontak", h.User.GetKontak)
 		userProtected.POST("/users/kontak", h.User.SaveKontak)
-		userProtected.PUT("/users/kontak", h.User.SaveKontak) // alias update
+		userProtected.PUT("/users/kontak", h.User.UpdateKontak)
 		userProtected.DELETE("/users/kontak", h.User.DeleteKontak)
 
 		// Ambil nomor antrian (wajib login)

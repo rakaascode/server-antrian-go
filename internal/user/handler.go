@@ -1,8 +1,13 @@
 package user
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,17 +43,22 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	u, err := h.service.UpdateProfile(userID, req)
+	_, err := h.service.UpdateProfile(userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
 		return
 	}
 
-	u.Password = ""
+	profile, err := h.service.GetProfile(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Profil berhasil diperbarui",
-		"data":    u,
+		"data":    profile,
 	})
 }
 
@@ -147,6 +157,45 @@ func (h *UserHandler) SaveKontak(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Kontak WA berhasil disimpan",
+		"data": gin.H{
+			"user_id": u.ID,
+			"no_wa":   u.NoWA,
+		},
+	})
+}
+
+// UpdateKontak PUT /api/users/kontak — update nomor WA (hanya jika sudah ada)
+func (h *UserHandler) UpdateKontak(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+
+	// Cek apakah user sudah punya no_wa
+	existingUser, err := h.service.GetByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "User tidak ditemukan"})
+		return
+	}
+	if existingUser.NoWA == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Nomor WA belum tersimpan, gunakan POST untuk menyimpan pertama kali",
+		})
+		return
+	}
+
+	var req KontakRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "no_wa wajib diisi"})
+		return
+	}
+
+	u, err := h.service.SaveKontak(userID, req.NoWA)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Kontak WA berhasil diperbarui",
 		"data": gin.H{
 			"user_id": u.ID,
 			"no_wa":   u.NoWA,
@@ -311,5 +360,74 @@ func (h *UserHandler) GetAllUsersKontak(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    data,
+	})
+}
+
+// UploadAvatar POST /api/user/avatar (wajib login)
+// Upload foto profil baru (format multipart file 'avatar')
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "File avatar tidak ditemukan"})
+		return
+	}
+
+	// Validasi ekstensi
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Format file harus berupa JPG, JPEG, PNG, atau WEBP"})
+		return
+	}
+
+	// Batasi ukuran file maks 5MB
+	if file.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Ukuran file maksimal 5MB"})
+		return
+	}
+
+	// Buat nama file unik
+	filename := fmt.Sprintf("avatar_%d_%d%s", userID, time.Now().UnixNano(), ext)
+	uploadDir := "./uploads/avatars"
+	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal menyiapkan direktori penyimpanan"})
+		return
+	}
+
+	destPath := filepath.Join(uploadDir, filename)
+	if err := c.SaveUploadedFile(file, destPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal menyimpan file avatar"})
+		return
+	}
+
+	avatarURL := fmt.Sprintf("https://rakaascode.site/uploads/avatars/%s", filename)
+
+	// Update avatar_url di database
+	req := UpdateProfileRequest{
+		AvatarURL: avatarURL,
+	}
+	_, err = h.service.UpdateProfile(userID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal memperbarui avatar di database"})
+		return
+	}
+
+	profile, err := h.service.GetProfile(userID)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Avatar berhasil diperbarui",
+			"data": gin.H{
+				"avatar_url": avatarURL,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Avatar berhasil diperbarui",
+		"data":    profile,
 	})
 }

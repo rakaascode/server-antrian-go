@@ -7,6 +7,8 @@ services:
     restart: always
     ports:
       - "127.0.0.1:8080:8080"
+    volumes:
+      - app_uploads:/root/uploads
     env_file:
       - .env
     environment:
@@ -95,6 +97,7 @@ services:
 volumes:
   db_data:
   redis_data:
+  app_uploads:
 
 networks:
   appnet:
