@@ -38,17 +38,22 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	u, err := h.service.UpdateProfile(userID, req)
+	_, err := h.service.UpdateProfile(userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
 		return
 	}
 
-	u.Password = ""
+	profile, err := h.service.GetProfile(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Profil berhasil diperbarui",
-		"data":    u,
+		"data":    profile,
 	})
 }
 
@@ -147,6 +152,45 @@ func (h *UserHandler) SaveKontak(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Kontak WA berhasil disimpan",
+		"data": gin.H{
+			"user_id": u.ID,
+			"no_wa":   u.NoWA,
+		},
+	})
+}
+
+// UpdateKontak PUT /api/users/kontak — update nomor WA (hanya jika sudah ada)
+func (h *UserHandler) UpdateKontak(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+
+	// Cek apakah user sudah punya no_wa
+	existingUser, err := h.service.GetByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "User tidak ditemukan"})
+		return
+	}
+	if existingUser.NoWA == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Nomor WA belum tersimpan, gunakan POST untuk menyimpan pertama kali",
+		})
+		return
+	}
+
+	var req KontakRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "no_wa wajib diisi"})
+		return
+	}
+
+	u, err := h.service.SaveKontak(userID, req.NoWA)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Kontak WA berhasil diperbarui",
 		"data": gin.H{
 			"user_id": u.ID,
 			"no_wa":   u.NoWA,

@@ -116,7 +116,7 @@ lteduh-antrean@googlegroups.com`)
 		// Kontak WA user — simpan, lihat, update, hapus
 		userProtected.GET("/users/kontak", h.User.GetKontak)
 		userProtected.POST("/users/kontak", h.User.SaveKontak)
-		userProtected.PUT("/users/kontak", h.User.SaveKontak) // alias update
+		userProtected.PUT("/users/kontak", h.User.UpdateKontak)
 		userProtected.DELETE("/users/kontak", h.User.DeleteKontak)
 
 		// Ambil nomor antrian (wajib login)
