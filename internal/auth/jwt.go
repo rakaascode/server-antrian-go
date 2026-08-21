@@ -25,7 +25,7 @@ func GenerateToken(userID uint, email, username, role string, cabangID *uint) (s
 		Role:     role,
 		CabangID: cabangID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
