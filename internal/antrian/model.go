@@ -1,6 +1,11 @@
 package antrian
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+)
 
 const (
 	StatusMenunggu   = "menunggu"
@@ -15,6 +20,7 @@ type Antrian struct {
 	UserID   *uint `json:"user_id,omitempty"` // nullable: user yg ambil via app
 
 	NomorAntrian int    `json:"nomor_antrian"`
+	NomorDisplay string `json:"nomor_display" gorm:"-"` // format "A-001", display only
 	Status       string `json:"status" gorm:"default:'menunggu'"`
 
 	// Identitas pemilik kendaraan (sesuai STNK)
@@ -39,4 +45,20 @@ type Antrian struct {
 	Catatan   string    `json:"catatan,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (a *Antrian) formatNomorDisplay() {
+	if a.NomorAntrian > 0 {
+		a.NomorDisplay = fmt.Sprintf("A-%03d", a.NomorAntrian)
+	}
+}
+
+func (a *Antrian) AfterFind(tx *gorm.DB) (err error) {
+	a.formatNomorDisplay()
+	return nil
+}
+
+func (a *Antrian) AfterCreate(tx *gorm.DB) (err error) {
+	a.formatNomorDisplay()
+	return nil
 }

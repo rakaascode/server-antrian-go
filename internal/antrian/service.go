@@ -45,24 +45,17 @@ func (s *antrianService) GetMyAntrian(userID uint) ([]Antrian, error) {
 	return s.repo.FindByUserID(userID)
 }
 
-// AmbilAntrian membuat nomor antrian baru secara otomatis per cabang
+// AmbilAntrian membuat nomor antrian baru secara otomatis per cabang (aman dari race condition via advisory lock di repo)
 func (s *antrianService) AmbilAntrian(req AmbilAntrianRequest, userID *uint) (Antrian, error) {
 	// Validasi: jika reminder aktif, no WA wajib diisi
 	if req.ReminderAktif && req.NoWAReminder == "" {
 		return Antrian{}, errors.New("no_wa_reminder wajib diisi jika reminder_aktif = true")
 	}
 
-	// Ambil nomor antrian tertinggi hari ini (MAX), lalu +1.
-	// Menggunakan MAX bukan COUNT agar nomor tidak loncat saat ada antrian yang dibatalkan.
-	maxNomor, err := s.repo.MaxNomorTodayByCabang(req.CabangID)
-	if err != nil {
-		return Antrian{}, err
-	}
-
 	a := Antrian{
 		CabangID:          req.CabangID,
 		UserID:            userID,
-		NomorAntrian:      maxNomor + 1,
+		NomorAntrian:      0, // di-generate secara atomic dan safe di repository.Create()
 		Status:            StatusMenunggu,
 		NamaPemilik:       req.NamaPemilik,
 		NoPolisi:          req.NoPolisi,
@@ -101,7 +94,6 @@ func (s *antrianService) BatalkanAntrian(antrianID, userID uint) error {
 	return s.repo.UpdateStatus(antrianID, StatusDibatalkan)
 }
 
-
 // CallNext panggil antrian berikutnya di cabang ini
 // Jika antrian memiliki reminder aktif, kirim notifikasi WA secara async
 func (s *antrianService) CallNext(cabangID uint) (Antrian, error) {
@@ -118,9 +110,9 @@ func (s *antrianService) CallNext(cabangID uint) (Antrian, error) {
 	// Auto-kirim WA reminder jika user mengaktifkan pengingat
 	if next.ReminderAktif && next.NoWAReminder != "" {
 		pesan := fmt.Sprintf(
-			"🔔 *Pengingat Antrian*\n\nHalo %s! Nomor antrian Anda *#%d* sedang dipanggil. Silakan segera menuju ke area servis.\n\n🏍️ %s %s\nEstimasi: %s\n\nTerima kasih! 🙏",
+			"🔔 *Pengingat Antrian*\n\nHalo %s! Nomor antrian Anda *#%s* sedang dipanggil. Silakan segera menuju ke area servis.\n\n🏍️ %s %s\nEstimasi: %s\n\nTerima kasih! 🙏",
 			next.NamaPemilik,
-			next.NomorAntrian,
+			next.NomorDisplay,
 			next.MerkMotor,
 			next.TipeMotor,
 			next.EstimasiJam,

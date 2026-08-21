@@ -12,7 +12,6 @@ type AntrianRepository interface {
 	Create(a Antrian) (Antrian, error)
 	UpdateStatus(id uint, status string) error
 	Delete(id uint) error
-	MaxNomorTodayByCabang(cabangID uint) (int, error)
 	// Status antrian realtime
 	FindLatestDipanggil(cabangID uint) (*Antrian, error)
 	CountMenungguSebelum(cabangID uint, nomorAntrian int) (int64, error)
@@ -55,8 +54,31 @@ func (r *antrianRepository) FindByUserID(userID uint) ([]Antrian, error) {
 	return list, err
 }
 
+// Create membuat antrian baru dengan nomor urut yang aman dari race condition.
+// Menggunakan pg_advisory_xact_lock per cabang sehingga transaksi menghitung MAX dan INSERT
+// secara atomic untuk cabang yang sama.
 func (r *antrianRepository) Create(a Antrian) (Antrian, error) {
-	err := r.db.Create(&a).Error
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", int64(a.CabangID)).Error; err != nil {
+			return err
+		}
+
+		var maxNomor *int
+		if err := tx.Model(&Antrian{}).
+			Select("MAX(nomor_antrian)").
+			Where("cabang_id = ? AND DATE(created_at) = CURRENT_DATE", a.CabangID).
+			Scan(&maxNomor).Error; err != nil {
+			return err
+		}
+
+		if maxNomor != nil {
+			a.NomorAntrian = *maxNomor + 1
+		} else {
+			a.NomorAntrian = 1
+		}
+
+		return tx.Create(&a).Error
+	})
 	return a, err
 }
 
@@ -66,24 +88,6 @@ func (r *antrianRepository) UpdateStatus(id uint, status string) error {
 
 func (r *antrianRepository) Delete(id uint) error {
 	return r.db.Delete(&Antrian{}, id).Error
-}
-
-// MaxNomorTodayByCabang mengembalikan nomor antrian tertinggi hari ini untuk cabang tersebut.
-// Menggunakan MAX() sehingga tidak terpengaruh antrian yang dibatalkan —
-// nomor berikutnya selalu MAX + 1, tanpa loncat.
-func (r *antrianRepository) MaxNomorTodayByCabang(cabangID uint) (int, error) {
-	var maxNomor *int
-	err := r.db.Model(&Antrian{}).
-		Select("MAX(nomor_antrian)").
-		Where("cabang_id = ? AND DATE(created_at) = CURRENT_DATE", cabangID).
-		Scan(&maxNomor).Error
-	if err != nil {
-		return 0, err
-	}
-	if maxNomor == nil {
-		return 0, nil
-	}
-	return *maxNomor, nil
 }
 
 // FindLatestDipanggil ambil antrian yang sedang dipanggil (terbesar nomornya)
@@ -108,7 +112,6 @@ func (r *antrianRepository) CountMenungguSebelum(cabangID uint, nomorAntrian int
 }
 
 // GetRingkasanSemuaCabang mengambil ringkasan antrian hari ini dari semua cabang
-// dalam satu query: nama cabang, koordinat, nomor yang sedang dipanggil, estimasi jam, sisa menunggu
 func (r *antrianRepository) GetRingkasanSemuaCabang() ([]RingkasanCabangResponse, error) {
 	type row struct {
 		CabangID       uint
@@ -168,7 +171,6 @@ func (r *antrianRepository) GetRingkasanSemuaCabang() ([]RingkasanCabangResponse
 }
 
 // FindTodayActiveByCabang ambil antrian hari ini yang berstatus menunggu atau dipanggil
-// diurutkan berdasarkan nomor antrian — dipakai CRM untuk listing sebelum kirim reminder
 func (r *antrianRepository) FindTodayActiveByCabang(cabangID uint) ([]Antrian, error) {
 	var list []Antrian
 	err := r.db.Where(
